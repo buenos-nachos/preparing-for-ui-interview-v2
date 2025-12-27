@@ -1,0 +1,48 @@
+.container {
+    width: 100%;
+    height: calc(100vh - 80px);
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 100px;
+    overflow: hidden;
+}
+
+.content {
+    padding: 2rem;
+    border: 1px solid #ccc;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+/* Fade-in animation for new content */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Apply animation to markdown elements */
+.content h1,
+.content h2,
+.content h3,
+.content p,
+.content ul,
+.content ol,
+.content table,
+.content li {
+    animation: fadeIn 0.2s ease-out forwards;
+}
+
+.button {
+    padding: 0.5rem;
+}
+
+.textarea {
+    padding: 0.5rem;
+    width: 100%;
+    max-width: 500px;
+}

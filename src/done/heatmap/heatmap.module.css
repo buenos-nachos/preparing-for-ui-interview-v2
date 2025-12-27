@@ -1,0 +1,48 @@
+.container {
+    display: grid;
+    /* Grid size set by JS, or assume square and use aspect-ratio */
+    aspect-ratio: 1 / 1;
+    width: 100%;
+
+    /* Define grid structure based on size variable passed from JS */
+    grid-template-columns: repeat(var(--size), 1fr);
+    grid-template-rows: repeat(var(--size), 1fr);
+
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
+    position: relative;
+
+    /* Background grid lines can still be done with CSS gradients for efficiency! */
+    /* Or we can just rely on the active cells and a base bg */
+    background-image:
+        linear-gradient(rgba(0, 0, 0, 0.1) 1px, transparent 1px),
+        linear-gradient(to top, rgba(0, 0, 0, 0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 0, 0, 0.1) 1px, transparent 1px),
+        linear-gradient(to left, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
+
+    /* We need to size the background grid manually or via % if we want lines */
+    /* Actually with CSS Grid, the implicit grid tracks handle layout, but drawing lines needs visuals */
+    /* Let's keep the gradient background for lines as it's efficient */
+    background-size:
+        calc(100% / var(--size)) calc(100% / var(--size)),
+        100% 100%,
+        calc(100% / var(--size)) calc(100% / var(--size)),
+        100% 100%;
+
+    background-position:
+        0 0, 0 0, 0 0, 0 0;
+
+    background-repeat:
+        repeat, no-repeat, repeat, no-repeat;
+}
+
+.cell {
+    /* Positioned via inline grid-column / grid-row */
+    background-color: orange;
+    /* Opacity controlled by inline style or rgba background */
+    width: 100%;
+    height: 100%;
+    /* Ensure it doesn't overlap borders weirdly */
+    /* mix-blend-mode: multiply; */
+    /* Optional for better overlapping visuals */
+}
