@@ -1,48 +1,48 @@
 import "./reset.css";
 import css from "./app.module.css";
-import { ToastProvider } from "./done/toast/toast.react";
-import { ToastExample } from "./done/toast/toast.example";
+import { ToastProvider } from "./done/09-toast/toast.react";
+import { ToastExample } from "./done/09-toast/toast.example";
 
 import { useState } from "react";
 
-import { CheckboxTreeExample } from "./done/nested-checkboxes/checkboxes.example";
-import { AccordionExample } from "./done/accordion/accordion.example";
-import { TabsExample } from "./done/tabs/tabs.example";
-import { TooltipExample } from "./done/tooltip/tooltip.example";
-import { TableExample } from "./done/table/table.example";
-import { Markdown } from "./done/markdown/markdown.react";
-import { MarkdownExample } from "./done/markdown/markdown.example";
-import { ProgressBarExample } from "./done/progress-bar/progress-bar.example";
-import { SquareGameExample } from "./done/square-game/square-game.example";
-import { UploadComponentExample } from "./done/upload-component/upload-component.example";
-import { InfiniteCanvasExample } from "./done/infinite-canvas/infinite-canvas.example";
-import { GalleryExample } from "./done/gallery/gallery.example";
-import { GPTComponentExample } from "./done/gpt-chat/gpt-chat.example";
-import { HeatmapExample } from "./done/heatmap/heatmap.example";
-import { HeatmapCanvasExample } from './done/heatmap-canvas/heatmap-canvas.example';
-import { RedditThreadExample } from "./done/reddit-thread/reddit-thread.example";
-import { StarRatingExample, StarRatingVanillaExample } from "./done/star-rating/star-rating.example";
-import { VideoPlayerExample } from "./done/video-player/video-player.example";
+import { CheckboxTreeExample } from "./done/08-nested-checkboxes/checkboxes.example";
+import { AccordionExample, AccordionVanillaExample } from "./done/01-accordion/accordion.example";
+import { TabsExample, TabsVanillaExample } from "./done/03-tabs/tabs.example";
+import { TooltipExample, TooltipVanillaExample } from "./done/04-tooltip/tooltip.example";
+import { TableExample, TableVanillaExample } from "./done/05-table/table.example";
+import { Markdown } from "./done/10-markdown/markdown.react";
+import { MarkdownExample } from "./done/10-markdown/markdown.example";
+import { ProgressBarExample } from "./done/12-progress-bar/progress-bar.example";
+import { SquareGameExample } from "./done/11-square-game/square-game.example";
+import { UploadComponentExample } from "./done/13-upload-component/upload-component.example";
+import { InfiniteCanvasExample } from "./done/14-infinite-canvas/infinite-canvas.example";
+import { GalleryExample, GalleryVanillaExample } from "./done/07-gallery/gallery.example";
+import { GPTComponentExample } from "./done/15-gpt-chat/gpt-chat.example";
+import { HeatmapExample } from "./done/16-heatmap/heatmap.example";
+import { HeatmapCanvasExample } from './done/17-heatmap-canvas/heatmap-canvas.example';
+import { RedditThreadExample, RedditThreadVanillaExample } from "./done/06-reddit-thread/reddit-thread.example";
+import { StarRatingExample, StarRatingVanillaExample } from "./done/02-star-rating/star-rating.example";
+import { VideoPlayerExample } from "./done/18-video-player/video-player.example";
 
 // Import problem markdown files (Bun text imports)
-import toastProblem from "./done/toast/problem.md" with { type: 'text' };
-import checkboxProblem from "./done/nested-checkboxes/problem.md" with { type: 'text' };
-import accordionProblem from "./done/accordion/problem.md" with { type: 'text' };
-import tabsProblem from "./done/tabs/problem.md" with { type: 'text' };
-import tooltipProblem from "./done/tooltip/problem.md" with { type: 'text' };
-import tableProblem from "./done/table/problem.md" with { type: 'text' };
-import markdownProblem from "./done/markdown/problem.md" with { type: 'text' };
-import squareGameProblem from "./done/square-game/problem.md" with { type: 'text' };
-import progressBarProblem from "./done/progress-bar/problem.md" with { type: 'text' };
-import uploadComponentProblem from "./done/upload-component/problem.md" with { type: 'text' };
-import infiniteCanvasProblem from "./done/infinite-canvas/problem.md" with { type: 'text' };
-import galleryProblem from "./done/gallery/problem.md" with { type: 'text' };
-import gptChatProblem from "./done/gpt-chat/problem.md" with { type: 'text' };
-import heatmapProblem from "./done/heatmap/problem.md" with { type: 'text' };
-import heatmapCanvasProblem from "./done/heatmap-canvas/problem.md" with { type: 'text' };
-import redditThreadProblem from "./done/reddit-thread/problem.md" with { type: 'text' };
-import starRatingProblem from "./done/star-rating/problem.md" with { type: 'text' };
-import videoPlayerProblem from "./done/video-player/problem.md" with { type: 'text' };
+import toastProblem from "./done/09-toast/problem.md" with { type: 'text' };
+import checkboxProblem from "./done/08-nested-checkboxes/problem.md" with { type: 'text' };
+import accordionProblem from "./done/01-accordion/problem.md" with { type: 'text' };
+import tabsProblem from "./done/03-tabs/problem.md" with { type: 'text' };
+import tooltipProblem from "./done/04-tooltip/problem.md" with { type: 'text' };
+import tableProblem from "./done/05-table/problem.md" with { type: 'text' };
+import markdownProblem from "./done/10-markdown/problem.md" with { type: 'text' };
+import squareGameProblem from "./done/11-square-game/problem.md" with { type: 'text' };
+import progressBarProblem from "./done/12-progress-bar/problem.md" with { type: 'text' };
+import uploadComponentProblem from "./done/13-upload-component/problem.md" with { type: 'text' };
+import infiniteCanvasProblem from "./done/14-infinite-canvas/problem.md" with { type: 'text' };
+import galleryProblem from "./done/07-gallery/problem.md" with { type: 'text' };
+import gptChatProblem from "./done/15-gpt-chat/problem.md" with { type: 'text' };
+import heatmapProblem from "./done/16-heatmap/problem.md" with { type: 'text' };
+import heatmapCanvasProblem from "./done/17-heatmap-canvas/problem.md" with { type: 'text' };
+import redditThreadProblem from "./done/06-reddit-thread/problem.md" with { type: 'text' };
+import starRatingProblem from "./done/02-star-rating/problem.md" with { type: 'text' };
+import videoPlayerProblem from "./done/18-video-player/problem.md" with { type: 'text' };
 
 // Helper to create a problem overview component
 const createProblemOverview = (markdownContent: string) => {
@@ -75,13 +75,74 @@ const SECTIONS = {
     components: {
         title: "Components",
         items: {
-            toast: {
-                id: "toast",
-                name: "Toast",
+            accordion: {
+                id: "accordion",
+                name: "Accordion",
                 difficulty: "easy",
                 variants: {
-                    overview: { component: createProblemOverview(toastProblem) },
-                    react: { component: ToastExample },
+                    overview: { component: createProblemOverview(accordionProblem) },
+                    react: { component: AccordionExample },
+                    vanilla: { component: AccordionVanillaExample },
+                },
+            },
+            starRating: {
+                id: "starRating",
+                name: "Star Rating",
+                difficulty: "easy",
+                variants: {
+                    overview: { component: createProblemOverview(starRatingProblem) },
+                    react: { component: StarRatingExample },
+                    vanilla: { component: StarRatingVanillaExample },
+                },
+            },
+            tabs: {
+                id: "tabs",
+                name: "Tabs",
+                difficulty: "easy",
+                variants: {
+                    overview: { component: createProblemOverview(tabsProblem) },
+                    react: { component: TabsExample },
+                    vanilla: { component: TabsVanillaExample },
+                },
+            },
+            tooltip: {
+                id: "tooltip",
+                name: "Tooltip",
+                difficulty: "easy",
+                variants: {
+                    overview: { component: createProblemOverview(tooltipProblem) },
+                    react: { component: TooltipExample },
+                    vanilla: { component: TooltipVanillaExample },
+                },
+            },
+            table: {
+                id: "table",
+                name: "Table",
+                difficulty: "easy",
+                variants: {
+                    overview: { component: createProblemOverview(tableProblem) },
+                    react: { component: TableExample },
+                    vanilla: { component: TableVanillaExample },
+                },
+            },
+            redditThread: {
+                id: "redditThread",
+                name: "Reddit Thread",
+                difficulty: "easy",
+                variants: {
+                    overview: { component: createProblemOverview(redditThreadProblem) },
+                    react: { component: RedditThreadExample },
+                    vanilla: { component: RedditThreadVanillaExample },
+                },
+            },
+            gallery: {
+                id: "gallery",
+                name: "Gallery",
+                difficulty: "easy",
+                variants: {
+                    overview: { component: createProblemOverview(galleryProblem) },
+                    react: { component: GalleryExample },
+                    vanilla: { component: GalleryVanillaExample },
                 },
             },
             checkbox: {
@@ -93,40 +154,13 @@ const SECTIONS = {
                     react: { component: CheckboxTreeExample },
                 },
             },
-            accordion: {
-                id: "accordion",
-                name: "Accordion",
+            toast: {
+                id: "toast",
+                name: "Toast",
                 difficulty: "easy",
                 variants: {
-                    overview: { component: createProblemOverview(accordionProblem) },
-                    react: { component: AccordionExample },
-                },
-            },
-            tabs: {
-                id: "tabs",
-                name: "Tabs",
-                difficulty: "easy",
-                variants: {
-                    overview: { component: createProblemOverview(tabsProblem) },
-                    react: { component: TabsExample },
-                },
-            },
-            tooltip: {
-                id: "tooltip",
-                name: "Tooltip",
-                difficulty: "easy",
-                variants: {
-                    overview: { component: createProblemOverview(tooltipProblem) },
-                    react: { component: TooltipExample },
-                },
-            },
-            table: {
-                id: "table",
-                name: "Table",
-                difficulty: "easy",
-                variants: {
-                    overview: { component: createProblemOverview(tableProblem) },
-                    react: { component: TableExample },
+                    overview: { component: createProblemOverview(toastProblem) },
+                    react: { component: ToastExample },
                 },
             },
             markdown: {
@@ -174,15 +208,6 @@ const SECTIONS = {
                     react: { component: InfiniteCanvasExample },
                 },
             },
-            gallery: {
-                id: "gallery",
-                name: "Gallery",
-                difficulty: "easy",
-                variants: {
-                    overview: { component: createProblemOverview(galleryProblem) },
-                    react: { component: GalleryExample },
-                },
-            },
             gptChat: {
                 id: "gptChat",
                 name: "GPT Chat",
@@ -208,25 +233,6 @@ const SECTIONS = {
                 variants: {
                     overview: { component: createProblemOverview(heatmapCanvasProblem) },
                     react: { component: HeatmapCanvasExample },
-                },
-            },
-            redditThread: {
-                id: "redditThread",
-                name: "Reddit Thread",
-                difficulty: "easy",
-                variants: {
-                    overview: { component: createProblemOverview(redditThreadProblem) },
-                    react: { component: RedditThreadExample },
-                },
-            },
-            starRating: {
-                id: "starRating",
-                name: "Star Rating",
-                difficulty: "easy",
-                variants: {
-                    overview: { component: createProblemOverview(starRatingProblem) },
-                    react: { component: StarRatingExample },
-                    vanilla: { component: StarRatingVanillaExample },
                 },
             },
             videoPlayer: {
@@ -297,10 +303,10 @@ export default function App() {
                                 <p className={css.emptySection}>No items yet</p>
                             ) : (
                                 <ul className={css.problemList}>
-                                    {Object.entries(section.items).map(([problemId, problem]) => (
+                                    {Object.entries(section.items).map(([problemId, problem], index) => (
                                         <li key={problemId} className={css.problemItem}>
                                             <div className={css.problemHeader}>
-                                                <span className={css.problemName}>{problem.name}</span>
+                                                <span className={css.problemName}>{index + 1}. {problem.name}</span>
                                                 <span className={`${css.chip} ${css[problem.difficulty]}`}>
                                                     {problem.difficulty}
                                                 </span>

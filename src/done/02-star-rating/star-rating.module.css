@@ -1,0 +1,52 @@
+.container {
+    width: 100%;
+    height: 100%;
+}
+
+/* Base star style */
+.star {
+    font-size: 1.5rem;
+    cursor: pointer;
+    width: 2rem;
+    height: 2rem;
+    background: none;
+    border: none;
+    transition: opacity 0.2s ease-in-out;
+    opacity: 1;
+    -webkit-text-stroke: 1px black;
+    text-shadow:
+        -1px -1px 0 #000,
+        1px -1px 0 #000,
+        -1px 1px 0 #000,
+        1px 1px 0 #000;
+}
+
+/* Disabled/Readonly state */
+.star:disabled,
+.star[aria-readonly="true"] {
+    cursor: default;
+    pointer-events: none;
+    /* Prevents hover effects and clicks */
+}
+
+/* Dimmed state for inactive stars */
+.star[data-active="false"] {
+    opacity: 0.2;
+}
+
+/* 
+   Hover logic:
+   Only apply hover effects when the container is NOT holding disabled/readonly stars.
+   Since we added pointer-events: none to disabled stars, the :hover won't trigger on them directly.
+   However, we need to ensure the container-level :has() logic plays nicely.
+*/
+
+/* 1. Highlight all when hovering a valid star */
+.container:has(.star:hover) .star {
+    opacity: 0.8;
+}
+
+/* 2. Dim subsequent stars when hovering */
+.container .star:hover~.star {
+    opacity: 0.2;
+}

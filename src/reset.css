@@ -71,3 +71,8 @@ select {
     scroll-behavior: auto !important;
   }
 }
+
+button {
+  min-width: 7rem !important;
+  padding: 0.25rem !important;
+}

@@ -111,6 +111,7 @@ However, I strongly encourage you to **re-implement the solutions yourself after
 # 2. Key Concepts
 
 ## 2.1 Event Delegation
+## 2.2 Semantic tags / Power of HTML
 
 # 3. Vanilla Problems
 
