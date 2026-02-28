@@ -10,7 +10,7 @@ export type TAccordionItem = {
 
 export const Accordion = ({ items }: { items: TAccordionItem[] }) => {
   return (
-    <div className={cx(css.container, flex.flexColumnGap12)}>
+    <div className={cx(css.container, flex.flexColumnGap12, flex.w100)}>
       {items.map((item) => (
         <details key={item.id} className={css.details}>
           <summary
