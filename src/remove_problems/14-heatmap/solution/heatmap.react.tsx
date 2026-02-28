@@ -1,6 +1,8 @@
 import { useLayoutEffect, useRef, forwardRef, useImperativeHandle } from 'react'
 import styles from './heatmap.module.css'
 import { HeatmapChart } from './heatmap-chart'
+import flex from '@course/styles'
+import cx from '@course/cx'
 
 export type HeatmapRef = {
   addPoint: (x: number, y: number, value: number) => void
@@ -48,7 +50,7 @@ export const Heatmap = forwardRef<HeatmapRef, { size?: number }>(({ size = 100 }
 
   return (
     <div ref={parentRef} className={styles.container}>
-      <canvas ref={canvasRef} className={styles.canvas} />
+      <canvas ref={canvasRef} className={cx(styles.canvas, flex.wh100)} />
     </div>
   )
 })

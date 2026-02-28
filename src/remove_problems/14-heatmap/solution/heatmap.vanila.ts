@@ -1,6 +1,8 @@
 import { AbstractComponent } from '../../00-abstract-component/component'
 import { HeatmapChart } from './heatmap-chart'
 import styles from './heatmap.module.css'
+import flex from '@course/styles'
+import cx from '@course/cx'
 
 type THeatmapProps = {
   size?: number
@@ -18,7 +20,7 @@ export class Heatmap extends AbstractComponent<THeatmapProps> {
   toHTML() {
     return `
             <div class="${styles.container}">
-                <canvas class="${styles.canvas}"></canvas>
+                <canvas class="${cx(flex.wh100, styles.canvas)}"></canvas>
             </div>
         `
   }
