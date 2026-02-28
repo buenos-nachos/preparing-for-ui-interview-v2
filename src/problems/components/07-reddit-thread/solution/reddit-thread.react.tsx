@@ -36,7 +36,7 @@ function RedditComment({ comment }: { comment: IRedditComment }) {
 
 export const RedditThreadComponent = ({ comments }: { comments: IRedditComment[] }) => {
   return (
-    <div className={css.container}>
+    <div className={cx(css.container, flex.wh100)}>
       {comments.map((comment) => (
         <RedditComment key={comment.id} comment={comment} />
       ))}
