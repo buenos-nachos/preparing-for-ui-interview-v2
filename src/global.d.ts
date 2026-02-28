@@ -102,6 +102,71 @@ declare module '*/flex.module.css' {
     readonly marginVer32: string
     readonly marginLeft32: string
     readonly marginRight32: string
+    readonly w100: string
+    readonly h100: string
+    readonly wh100: string
+    readonly shadow1: string
+    readonly shadow2: string
+    readonly shadow3: string
+    readonly shadow4: string
+    readonly top0: string
+    readonly left0: string
+    readonly right0: string
+    readonly bottom0: string
+    readonly inset0: string
+    readonly z1: string
+    readonly z10: string
+    readonly z100: string
+    readonly bgBlack1: string
+    readonly bgBlack2: string
+    readonly bgBlack3: string
+    readonly bgBlack4: string
+    readonly bgBlack5: string
+    readonly bgBlack6: string
+    readonly bgBlack7: string
+    readonly bgBlack8: string
+    readonly bgBlack9: string
+    readonly bgBlack10: string
+    readonly bgWhite1: string
+    readonly bgWhite2: string
+    readonly bgWhite3: string
+    readonly bgWhite4: string
+    readonly bgWhite5: string
+    readonly bgWhite6: string
+    readonly bgWhite7: string
+    readonly bgWhite8: string
+    readonly bgWhite9: string
+    readonly bgWhite10: string
+    readonly br0: string
+    readonly br4: string
+    readonly br8: string
+    readonly br16: string
+    readonly br32: string
+    readonly br64: string
+    readonly br128: string
+    readonly pRel: string
+    readonly pAbs: string
+    readonly cBlack1: string
+    readonly cBlack2: string
+    readonly cBlack3: string
+    readonly cBlack4: string
+    readonly cBlack5: string
+    readonly cBlack6: string
+    readonly cBlack7: string
+    readonly cBlack8: string
+    readonly cBlack9: string
+    readonly cBlack10: string
+    readonly cWhite1: string
+    readonly cWhite2: string
+    readonly cWhite3: string
+    readonly cWhite4: string
+    readonly cWhite5: string
+    readonly cWhite6: string
+    readonly cWhite7: string
+    readonly cWhite8: string
+    readonly cWhite9: string
+    readonly cWhite10: string
+    readonly bNone: string
   }
   export default classes
 }

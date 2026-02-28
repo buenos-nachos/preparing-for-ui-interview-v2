@@ -70,12 +70,7 @@ import {
   GptChatStudentExample,
   GptChatStudentVanillaExample,
 } from './problems/components/19-gpt-chat/gpt-chat.example'
-import {
-  HeatmapExample,
-  HeatmapVanillaExample,
-  HeatmapStudentExample,
-  HeatmapStudentVanillaExample,
-} from './problems/components/14-heatmap/heatmap.example'
+
 import {
   RedditThreadExample,
   RedditThreadVanillaExample,
@@ -135,7 +130,7 @@ import tableEngineProblem from './problems/components/21.3-google-sheet-engine/p
 import infiniteCanvasProblem from './problems/components/20-infinite-canvas/problem.md' with { type: 'text' }
 import galleryProblem from './problems/components/08-gallery/problem.md' with { type: 'text' }
 import gptChatProblem from './problems/components/19-gpt-chat/problem.md' with { type: 'text' }
-import heatmapProblem from './problems/components/14-heatmap/problem.md' with { type: 'text' }
+
 import redditThreadProblem from './problems/components/07-reddit-thread/problem.md' with { type: 'text' }
 import starRatingProblem from './problems/components/02-star-rating/problem.md' with { type: 'text' }
 import calculatorProblem from './problems/components/11-calculator/problem.md' with { type: 'text' }
@@ -557,18 +552,7 @@ const SECTIONS = {
           studentReact: { component: TypeaheadStudentExample },
         },
       },
-      heatmap: {
-        id: 'heatmap',
-        name: 'Heatmap',
-        difficulty: 'hard',
-        variants: {
-          overview: { component: createProblemOverview(heatmapProblem) },
-          react: { component: HeatmapExample },
-          vanilla: { component: HeatmapVanillaExample },
-          studentReact: { component: HeatmapStudentExample },
-          studentVanilla: { component: HeatmapStudentVanillaExample },
-        },
-      },
+
       progressBar: {
         id: 'progressBar',
         name: 'Progress Bar',

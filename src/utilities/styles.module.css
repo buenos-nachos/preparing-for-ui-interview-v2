@@ -540,3 +540,280 @@
 .marginRight32 {
   margin-right: 32px;
 }
+
+/* Size utilities */
+.w100 {
+  width: 100%;
+}
+
+.h100 {
+  height: 100%;
+}
+
+.wh100 {
+  width: 100%;
+  height: 100%;
+}
+
+/* Shadow utilities */
+.shadow1 {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.shadow2 {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.shadow3 {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+}
+
+.shadow4 {
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Position inset utilities */
+.top0 {
+  top: 0;
+}
+
+.left0 {
+  left: 0;
+}
+
+.right0 {
+  right: 0;
+}
+
+.bottom0 {
+  bottom: 0;
+}
+
+.inset0 {
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* Z-index utilities */
+.z1 {
+  z-index: 1;
+}
+
+.z10 {
+  z-index: 10;
+}
+
+.z100 {
+  z-index: 100;
+}
+
+/* Background color utilities - bgBlack (rgba(0,0,0,alpha)) */
+.bgBlack1 {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.bgBlack2 {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.bgBlack3 {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+.bgBlack4 {
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.bgBlack5 {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.bgBlack6 {
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
+.bgBlack7 {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.bgBlack8 {
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+.bgBlack9 {
+  background-color: rgba(0, 0, 0, 0.9);
+}
+
+.bgBlack10 {
+  background-color: rgba(0, 0, 0, 1);
+}
+
+/* Background color utilities - bgWhite (rgba(255,255,255,alpha)) */
+.bgWhite1 {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.bgWhite2 {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.bgWhite3 {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.bgWhite4 {
+  background-color: rgba(255, 255, 255, 0.4);
+}
+
+.bgWhite5 {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.bgWhite6 {
+  background-color: rgba(255, 255, 255, 0.6);
+}
+
+.bgWhite7 {
+  background-color: rgba(255, 255, 255, 0.7);
+}
+
+.bgWhite8 {
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+.bgWhite9 {
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+.bgWhite10 {
+  background-color: rgba(255, 255, 255, 1);
+}
+
+/* Border-radius utilities */
+.br0 {
+  border-radius: 0;
+}
+
+.br4 {
+  border-radius: 4px;
+}
+
+.br8 {
+  border-radius: 8px;
+}
+
+.br16 {
+  border-radius: 16px;
+}
+
+.br32 {
+  border-radius: 32px;
+}
+
+.br64 {
+  border-radius: 64px;
+}
+
+.br128 {
+  border-radius: 128px;
+}
+
+/* Position utilities */
+.pRel {
+  position: relative;
+}
+
+.pAbs {
+  position: absolute;
+}
+
+/* Text color utilities - cBlack (rgba(0,0,0,alpha)) */
+.cBlack1 {
+  color: rgba(0, 0, 0, 0.1);
+}
+
+.cBlack2 {
+  color: rgba(0, 0, 0, 0.2);
+}
+
+.cBlack3 {
+  color: rgba(0, 0, 0, 0.3);
+}
+
+.cBlack4 {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.cBlack5 {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.cBlack6 {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.cBlack7 {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.cBlack8 {
+  color: rgba(0, 0, 0, 0.8);
+}
+
+.cBlack9 {
+  color: rgba(0, 0, 0, 0.9);
+}
+
+.cBlack10 {
+  color: rgba(0, 0, 0, 1);
+}
+
+/* Text color utilities - cWhite (rgba(255,255,255,alpha)) */
+.cWhite1 {
+  color: rgba(255, 255, 255, 0.1);
+}
+
+.cWhite2 {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.cWhite3 {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.cWhite4 {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.cWhite5 {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.cWhite6 {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.cWhite7 {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.cWhite8 {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.cWhite9 {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.cWhite10 {
+  color: rgba(255, 255, 255, 1);
+}
+
+/* Border utilities */
+.bNone {
+  border: none;
+}
