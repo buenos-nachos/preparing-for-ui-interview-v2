@@ -136,7 +136,7 @@ Bun.serve({
       await new Promise((resolve) => setTimeout(resolve, 2000))
 
       try {
-        const file = Bun.file('./src/done/12-typeahead/data.json')
+        const file = Bun.file('./src/problems/components/13-typeahead/data.json')
         // TODO: caching strategy for production, but for now file read is fine
         const text = await file.text()
         const data = JSON.parse(text) as Array<{ query: string; id: string; value: string }>

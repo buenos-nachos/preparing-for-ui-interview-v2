@@ -3,13 +3,14 @@ import { Typeahead as TypeaheadStudent } from './typeahead.react'
 import { Typeahead as VanillaTypeahead } from './solution/typeahead.vanila'
 import { useEffect, useRef } from 'react'
 
-const handleQuery = async (query: string) => {
+const handleQuery = async (query: string, signal?: AbortSignal) => {
   if (!query) return []
   try {
-    const response = await fetch(`/api/typeahead?query=${encodeURIComponent(query)}`)
+    const response = await fetch(`/api/typeahead?query=${encodeURIComponent(query)}`, { signal })
     if (!response.ok) throw new Error('Network response was not ok')
     return await response.json()
-  } catch (error) {
+  } catch (error: any) {
+    if (error.name === 'AbortError') return []
     console.error('Fetch error:', error)
     return []
   }

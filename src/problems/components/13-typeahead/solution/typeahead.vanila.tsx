@@ -2,21 +2,25 @@ import { AbstractComponent } from '../../00-abstract-component/component'
 import { Trie } from './trie'
 import styles from './typeahead.module.css'
 import type { TTypeaheadEntry } from './typeahead.react'
+import flex from '@course/styles'
+import cx from '@course/cx'
 
 type TTypeaheadProps = {
   id?: string
-  onQuery: (query: string) => Promise<TTypeaheadEntry<any>[]>
+  onQuery: (query: string, signal?: AbortSignal) => Promise<TTypeaheadEntry<any>[]>
   itemRender?: (item: TTypeaheadEntry<any>) => string
 }
 
 export class Typeahead extends AbstractComponent<TTypeaheadProps> {
+  // Step 2: State & Helpers
   private trie: Trie<TTypeaheadEntry<any>>
   private items: TTypeaheadEntry<any>[] = []
   private query: string = ''
   private isLoading: boolean = false
+  private abortController: AbortController | null = null
 
   constructor(config: TTypeaheadProps & { root: HTMLElement }) {
-    super({ ...config, listeners: ['input'] })
+    super({ ...config, listeners: ['input', 'click', 'keydown'] })
     this.trie = new Trie()
     this.config.id = this.config.id || 'typeahead-vanilla'
   }
@@ -31,6 +35,7 @@ export class Typeahead extends AbstractComponent<TTypeaheadProps> {
     })
   }
 
+  // Read cached results from the Trie
   private updateVisibleItems() {
     this.items = this.trie.getWithPrefix(this.query)
     this.renderList()
@@ -45,36 +50,74 @@ export class Typeahead extends AbstractComponent<TTypeaheadProps> {
     this.fetchSuggestions()
   }
 
+  public onClick(e: Event) {
+    const target = e.target as HTMLElement
+    const li = target.closest('li[data-id]') as HTMLElement
+    if (!li) return
+
+    const id = li.dataset.id
+    const item = this.items.find((i) => i.id === id)
+    if (!item) return
+
+    this.query = item.query
+    this.items = []
+    const input = this.container?.querySelector('input') as HTMLInputElement
+    if (input) {
+      input.value = this.query
+      input.focus()
+    }
+    this.renderList()
+  }
+
+  public onKeydown(e: KeyboardEvent) {
+    if (e.key === 'Escape') {
+      this.items = []
+      this.renderList()
+      const input = this.container?.querySelector('input') as HTMLInputElement
+      if (input) input.focus()
+      return
+    }
+
+    if (e.key === 'Enter' || e.key === ' ') {
+      this.onClick(e)
+      if (e.key === ' ') e.preventDefault() // prevent scrolling
+    }
+  }
+
+  // Step 3 & 4: Async Fetching & Race Conditions
   private async fetchSuggestions() {
     this.isLoading = true
     this.renderList() // Update loading state UI
 
-    const timestamp = Date.now()
-    this.lastRequestTimestamp = timestamp
+    // AbortController prevents race conditions (older slower requests overwriting newer fast ones)
+    if (this.abortController) {
+      this.abortController.abort()
+    }
+    this.abortController = new AbortController()
+    const { signal } = this.abortController
 
     try {
-      const entries = await this.config.onQuery(this.query)
-      if (this.lastRequestTimestamp !== timestamp) return
-
+      const entries = await this.config.onQuery(this.query, signal)
       this.updateTrie(entries)
       this.updateVisibleItems()
-    } catch (error) {
-      console.error(error)
+    } catch (error: any) {
+      if (error.name !== 'AbortError') {
+        console.error(error)
+      }
     } finally {
-      if (this.lastRequestTimestamp === timestamp) {
+      if (!signal.aborted) {
         this.isLoading = false
         this.renderList()
       }
     }
   }
 
-  // Track last request time for race condition
-  private lastRequestTimestamp: number = 0
 
+  // Step 6: Rendering
   toHTML() {
     return `
             <section class="${styles.container}">
-                <div role="status" class="${styles.visuallyHidden}" aria-live="polite">
+                <div role="status" class="${cx(flex.pAbs, styles.visuallyHidden)}" aria-live="polite">
                     ${this.items.length} results available.
                 </div>
                 <input 
@@ -83,11 +126,11 @@ export class Typeahead extends AbstractComponent<TTypeaheadProps> {
                     aria-autocomplete="list" 
                     aria-expanded="false" 
                     aria-controls="${this.config.id}-listbox"
-                    class="${styles.input}" 
+                    class="${flex.w100}" 
                     type="text" 
                     value="${this.query}" 
                 />
-                <ul id="${this.config.id}-listbox" role="listbox" class="${styles.list}" style="display: none;">
+                <ul id="${this.config.id}-listbox" role="listbox" class="${cx(flex.bgWhite10, flex.shadow4, flex.padding8, flex.br4, styles.list)}" style="display: none;">
                 </ul>
             </section>
         `
@@ -108,7 +151,7 @@ export class Typeahead extends AbstractComponent<TTypeaheadProps> {
     let html = this.items
       .map(
         (item) => `
-            <li tabindex="0" role="option" aria-selected="false" class="${styles.item}" data-id="${item.id}">
+            <li tabindex="0" role="option" aria-selected="false" class="${cx(styles.item, flex.padding4)}" data-id="${item.id}">
                 ${this.itemRender(item)}
             </li>
         `,
@@ -116,7 +159,7 @@ export class Typeahead extends AbstractComponent<TTypeaheadProps> {
       .join('')
 
     if (this.isLoading) {
-      html += `<li role="status" class="${styles.item}" style="color: #888">Loading...</li>`
+      html += `<li role="status" class="${cx(styles.item, flex.padding4, flex.cBlack4)}">Loading...</li>`
     }
 
     list.innerHTML = html

@@ -1,57 +1,44 @@
-const ALPHABET_SIZE = 27
-const ALPHABET_START_INDEX = 'a'.charCodeAt(0)
-
-const fromCharToIndex = (char: string) => {
-  if (char === ' ') return ALPHABET_SIZE - 1
-  const code = char.charCodeAt(0)
-  if (code < ALPHABET_START_INDEX || code > ALPHABET_START_INDEX + ALPHABET_SIZE - 2) {
-    throw Error('Invalid character')
-  }
-  return code - ALPHABET_START_INDEX
-}
-const normilise = (word: string) => word.toLowerCase()
+const normalize = (word: string) => word.toLowerCase()
 
 class TrieNode<T> {
-  constructor(
-    public value: T | null = null,
-    public isEnd: boolean = false,
-    public index: Array<TrieNode<T> | undefined> = Array(ALPHABET_SIZE),
-  ) {}
+  value: T | null = null
+  isEnd: boolean = false
+  children: Map<string, TrieNode<T>> = new Map()
+
+  constructor() {}
 }
 
 export class Trie<T> {
   private root: TrieNode<T>
 
   constructor() {
-    this.root = new TrieNode<T>(null)
+    this.root = new TrieNode<T>()
   }
 
   insert(word: string, value: T) {
     if (word.length === 0) {
       return
     }
-    word = normilise(word)
+    word = normalize(word)
     let node = this.root
     for (const char of word) {
-      const index = fromCharToIndex(char)
-      if (node.index[index] == null) {
-        node.index[index] = new TrieNode<T>()
+      if (!node.children.has(char)) {
+        node.children.set(char, new TrieNode<T>())
       }
-      node = node.index[index]!
+      node = node.children.get(char)!
     }
     node.isEnd = true
     node.value = value
   }
 
   get(word: string): TrieNode<T> | null {
-    word = normilise(word)
+    word = normalize(word)
     let node = this.root
     for (const char of word) {
-      const index = fromCharToIndex(char)
-      if (node.index[index] == null) {
+      if (!node.children.has(char)) {
         return null
       }
-      node = node.index[index]!
+      node = node.children.get(char)!
     }
     return node
   }
@@ -61,15 +48,14 @@ export class Trie<T> {
   }
 
   getWithPrefix(prefix: string): Array<T> {
-    prefix = normilise(prefix)
+    prefix = normalize(prefix)
     const node = this.get(prefix)
     if (node == null) return []
     return this.#collect(node.isEnd && node.value != null ? [node.value] : [], node)
   }
 
   #collect(acc: Array<T>, node: TrieNode<T>): Array<T> {
-    for (const n of node.index) {
-      if (n == null) continue
+    for (const [, n] of node.children) {
       if (n.isEnd && n.value) {
         acc.push(n.value)
       }

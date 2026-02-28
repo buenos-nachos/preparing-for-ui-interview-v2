@@ -1,42 +1,19 @@
 .container {
-  display: grid;
-  grid-template-columns: 1fr;
-}
-
-.input {
-  width: 100%;
-  padding: 0.25rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 1.5rem;
+  position: relative;
 }
 
 .list {
   overflow-y: auto;
-  height: fit-content;
-  min-height: 1rem;
   max-height: 20rem;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.25rem;
-  box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  background-color: white;
-  padding: 0.5rem;
-  border-radius: 0 0 0.5rem 0.5rem;
-}
-
-.item {
-  padding: 0.25rem;
+  list-style: none;
+  margin: 0;
 }
 
 .item:hover {
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(0, 0, 0, 0.1);
 }
 
 .visuallyHidden {
-  position: absolute;
   width: 1px;
   height: 1px;
   padding: 0;
