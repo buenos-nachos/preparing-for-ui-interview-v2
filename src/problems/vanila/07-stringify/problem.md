@@ -52,3 +52,9 @@ stringify(obj) // "{ a: 1, self: [Circular] }"
 2. Use a `WeakSet` to track seen objects for circular reference detection
 3. Check if value is in `seen` before recursing, add to `seen` before processing
 4. Pass `seen` to all recursive calls
+
+## Run Tests
+
+```bash
+bun test src/problems/vanila/07-stringify/test/stringify.test.ts
+```
