@@ -1,39 +1,64 @@
 # Dialog Component
 
-**Difficulty**: `easy`
+**Difficulty**: 🟢 Easy · **Time**: 10–15 min
+
+## What You'll Learn
+
+- Native `<dialog>` element and `showModal()` API
+- `::backdrop` pseudo-element styling
+- Focus trapping and Escape key handling (built-in)
+- Syncing native dialog state with React state via the `close` event
 
 ## Goal
 
-Implement a modal `Dialog` component using the native HTML `<dialog>` element. The dialog should be accessible, keyboard-friendly, and properly centered with a backdrop.
+Build a modal dialog using the native HTML `<dialog>` element. The dialog should appear centered with a backdrop overlay, support Confirm/Cancel actions, and close on Escape.
+
+```
+┌─────────────────────────────────────────┐
+│░░░░░░░░░░░░░░ backdrop ░░░░░░░░░░░░░░░░│
+│░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
+│░░░░░┌─────────────────────────┐░░░░░░░░░│
+│░░░░░│                         │░░░░░░░░░│
+│░░░░░│   Are you sure?         │░░░░░░░░░│
+│░░░░░│                         │░░░░░░░░░│
+│░░░░░│   [ Cancel ] [ Confirm ]│░░░░░░░░░│
+│░░░░░└─────────────────────────┘░░░░░░░░░│
+│░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
+└─────────────────────────────────────────┘
+```
 
 ## Requirements
 
 ### Core Functionality
 
-1. **Modal Behavior**: Use `showModal()` to display the dialog as a modal (centered, with backdrop).
-2. **Open/Close**: Support open state control via props/methods.
+1. **Modal behavior**: Use `showModal()` to display the dialog (centered, with backdrop, inert background).
+2. **Open/Close**: Control via props (React) or methods (Vanilla).
 3. **Actions**: Provide Confirm and Cancel buttons that trigger callbacks.
-4. **Native Close Handling**: Handle the native `close` event (triggered by Escape key) to sync state.
+4. **Native close handling**: Listen to the `close` event (fired on Escape) to sync state.
 
-### HTML `<dialog>` Specifics
+### `<dialog>` API — Key Differences
 
-1. **`showModal()` vs `open` attribute**:
-   - `open` attribute: Renders dialog inline, no backdrop, no centering.
-   - `showModal()`: Renders as modal with `::backdrop`, centered by browser.
-2. **`::backdrop` pseudo-element**: Style the overlay behind the modal.
-3. **`close` event**: Fired when dialog is closed (via `close()` or Escape key).
+| | `open` attribute | `showModal()` |
+|---|---|---|
+| Positioning | Inline (no centering) | Centered by browser |
+| Backdrop | ❌ None | ✅ `::backdrop` pseudo-element |
+| Focus trap | ❌ No | ✅ Automatic |
+| Escape closes | ❌ No | ✅ Fires `close` event |
+| Background inert | ❌ No | ✅ Automatic |
+
+> **Always use `showModal()`** for modal dialogs — it gives you accessibility for free.
 
 ### Accessibility (A11y)
 
-1. **Focus Management**: First focusable element should receive focus when opened.
-2. **Escape Key**: Should close the dialog (native behavior).
-3. **Inert Background**: Background content is automatically inert when using `showModal()`.
+1. First focusable element receives focus automatically when opened.
+2. Escape key closes the dialog (native behavior).
+3. Background content is automatically inert (can't Tab to it).
 
 ## API Design
 
 ### React
 
-```tsx
+```ts
 type TDialogProps = {
   open: boolean
   onConfirm: () => void
@@ -52,35 +77,62 @@ type TDialogProps = {
 }
 
 // Methods
-dialog.open() // Show the modal
-dialog.close() // Close the modal
+dialog.open()   // calls showModal()
+dialog.close()  // calls close()
 ```
 
-## Solution Approach
+## Walkthrough
 
-1. **React**: Use `useRef` to get dialog element, `useEffect` to call `showModal()`/`close()` based on `open` prop.
-2. **Vanilla**: Extend `AbstractComponent`, expose `open()` and `close()` methods.
-3. **State Sync**: Listen to the native `close` event to call `onCancel` and sync parent state.
+### Step 1 — Render the `<dialog>`
 
-## Key Implementation Details
+Create a `<dialog>` element with your content and two buttons (Cancel, Confirm).
 
-```tsx
-// React: Sync open state with native dialog
-useEffect(() => {
-  if (open) {
-    dialogRef.current?.showModal()
-  } else {
-    dialogRef.current?.close()
-  }
-}, [open])
+### Step 2 — Sync open state with `showModal()`
 
-// Handle native close (Escape key)
+```
+useEffect:
+  if (open)  → dialogRef.current.showModal()
+  if (!open) → dialogRef.current.close()
+```
+
+> ⚠️ Don't use the `open` HTML attribute — it bypasses modal behavior.
+
+### Step 3 — Handle native close event
+
+The browser fires a `close` event when the user presses Escape. Listen for it and call `onCancel` to sync your React state:
+
+```
 <dialog onClose={onCancel}>
 ```
 
-## Test Cases
+### Step 4 — Style the backdrop
 
-1. **Open/Close**: Click button → Dialog opens centered with backdrop. Click Cancel → Dialog closes.
-2. **Escape Key**: Open dialog, press Escape → Dialog closes, state syncs.
-3. **Confirm Action**: Click Confirm → `onConfirm` callback fires, dialog closes.
-4. **Reopen**: Close dialog, reopen → Should work correctly (state sync).
+```css
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+```
+
+<details>
+<summary>💡 Hint — Common pitfall: dialog won't reopen</summary>
+
+If you call `showModal()` on an already-open dialog, it throws an error. Always check `dialogRef.current.open` before calling `showModal()`, or ensure your `useEffect` only runs when `open` actually changes.
+</details>
+
+## Edge Cases
+
+| Scenario | Expected |
+|---|---|
+| Press Escape | Dialog closes, `onCancel` fires, parent state syncs |
+| Click Confirm | `onConfirm` fires, dialog closes |
+| Open → Close → Reopen | Works correctly (no stale state) |
+| Dialog content overflows | Scrollable within the dialog |
+| Multiple rapid open/close | No errors from `showModal()` on already-open dialog |
+
+## Verification
+
+1. Click button → dialog opens centered with backdrop.
+2. Click Cancel → dialog closes, state syncs.
+3. Press Escape → dialog closes, `onCancel` fires.
+4. Click Confirm → `onConfirm` fires, dialog closes.
+5. Close and reopen → works correctly.

@@ -1,114 +1,132 @@
 # Tooltip
 
-**Difficulty**: `easy`
+**Difficulty**: 🟢 Easy · **Time**: 15–20 min
+
+## What You'll Learn
+
+- Coordinate math with `getBoundingClientRect()`
+- CSS absolute positioning relative to a trigger element
+- Auto-positioning logic (flip when clipped by boundary)
+- ARIA `tooltip` role and `aria-describedby`
 
 ## Goal
 
-Implement a `Tooltip` component that displays additional information when a user interacts with an element (hover or focus). It should support customizable positioning and behave accessibly.
+Build a tooltip that appears on hover/focus near a trigger element. Support fixed positions (`top`, `bottom`, `left`, `right`) and an `auto` mode that picks the best position based on available space.
+
+```
+                  ┌───────────┐
+                  │  Tooltip  │   ← position: top
+                  └─────┬─────┘
+                        │ 8px offset
+                  ┌─────▼─────┐
+                  │  Trigger   │
+                  └───────────┘
+
+  ┌───────────┐                   ┌───────────┐
+  │  Tooltip  │──8px──│ Trigger │──8px──│  Tooltip  │
+  └───────────┘       └─────────┘       └───────────┘
+    left                                  right
+```
 
 ## Requirements
 
 ### Core Functionality
 
-1. **Triggering**: The tooltip should appear on `mouseenter` and `focusin` events, and disappear on `mouseleave`, `focusout`, and `Escape` key press.
-2. **Positioning**:
-   - Support explicit positions: `top`, `bottom`, `left`, `right`.
-   - Support `auto` positioning: Automatically choose the best position based on available viewport space.
-3. **Content**: Accept arbitrary HTML content (string for Vanilla, ReactNode for React) for the tooltip body.
-4. **Resiliency**: Handle edge cases where the tooltip might overflow the viewport.
+1. Show tooltip on **mouse enter** and **focus**; hide on **mouse leave** and **blur**.
+2. Support `position` prop: `'top' | 'bottom' | 'left' | 'right' | 'auto'`.
+3. Position the tooltip with an 8px offset from the trigger.
+4. **Auto mode**: try positions in order (top → right → bottom → left) and pick the first one that fits within the boundary.
 
-### Accessibility (A11y)
+### Auto-Positioning Algorithm
 
-1. **Roles**: The tooltip container should have `role="tooltip"`.
-2. **Keyboard Navigation**:
-   - The trigger element must be keyboard focusable.
-   - Tooltip should open on focus.
-   - Pressing `Escape` should close the tooltip.
-3. **ARIA**: Use `aria-describedby` on the trigger element pointing to the tooltip ID when visible.
+```
+For each candidate position (top, right, bottom, left):
+  1. Calculate tooltip (x, y) based on trigger rect
+  2. Check: does the tooltip fit within the boundary rect?
+     - x >= boundary.left
+     - y >= boundary.top
+     - x + tooltipWidth <= boundary.right
+     - y + tooltipHeight <= boundary.bottom
+  3. If it fits → use this position
+  4. If none fit → fall back to 'top'
+```
+
+**Coordinate formulas:**
+
+| Position | x | y |
+|---|---|---|
+| top | `trigger.left + trigger.width/2 - tooltip.width/2` | `trigger.top - tooltip.height - 8` |
+| bottom | `trigger.left + trigger.width/2 - tooltip.width/2` | `trigger.bottom + 8` |
+| left | `trigger.left - tooltip.width - 8` | `trigger.top + trigger.height/2 - tooltip.height/2` |
+| right | `trigger.right + 8` | `trigger.top + trigger.height/2 - tooltip.height/2` |
+
+### Boundary
+
+- Accept an optional `boundary` prop (ref or HTMLElement).
+- If provided, use its `getBoundingClientRect()` as the constraint.
+- If not provided, use the viewport (`{ left: 0, top: 0, right: innerWidth, bottom: innerHeight }`).
+
+### Accessibility
+
+1. Use `role="tooltip"` on the tooltip element.
+2. Set `aria-describedby` on the trigger pointing to the tooltip's `id`.
+3. Close on Escape key.
 
 ## API Design
 
-The component should accept the following props (React) or config (Vanilla):
-
-- `children` (`HTMLElement` | `ReactNode`): The trigger element.
-- `content` (`string` | `ReactNode`): The content to display inside the tooltip.
-- `position` (`'top' | 'bottom' | 'left' | 'right' | 'auto'`): Preferred position. Defaults to `'top'`.
-
-## Solution Approach
-
-1. **State Management**: Track visibility state (`isVisible`).
-2. **Event Listeners**:
-   - Bind `mouseenter`/`mouseleave` to show/hide.
-   - Bind `focusin`/`focusout` to show/hide (bubbling events are crucial).
-   - Bind `keydown` to listen for `Escape`.
-3. **Positioning Logic**:
-   - Use absolute positioning relative to a container.
-   - For `auto`, calculate available space in all 4 directions using `getBoundingClientRect()` and the viewport dimensions.
-   - Switch class names or styles dynamically based on the chosen position.
-
-### Auto Positioning Logic
-
-The `auto` positioning algorithm attempts to place the tooltip in the following order of preference, checking if there is sufficient space in the viewport:
-
-1.  **Top**: Default preference.
-2.  **Right**: If Top fails.
-3.  **Left**: If Right fails.
-4.  **Bottom**: If Left fails.
-5.  **Fallback (Top)**: If all fail.
-
-### Positioning Visualized
-
-The following diagrams illustrate how we determine if there is enough space in the Viewport.
-
-#### Viewport & Coordinates
-
-```text
-(0,0) -----------------------------------------------------> X
-  |
-  |      VIEWPORT (window.innerWidth x window.innerHeight)
-  |
-  |          Top Space?
-  |      [________________]
-  |      |                |
-  | Left |    TRIGGER     | Right
-  | Space|   ELEMENT      | Space?
-  |      |________________|
-  |
-  |          Bottom Space?
-  |
-  v Y
+```ts
+type TooltipProps = {
+  position?: 'top' | 'bottom' | 'left' | 'right' | 'auto'
+  children: React.ReactNode       // trigger element
+  content: React.ReactNode        // tooltip content
+  boundary?: RefObject<HTMLElement> | HTMLElement
+}
 ```
 
-#### Verification Logic
+## Walkthrough
 
-To check if a position fits, we compare the potential tooltip edges against the viewport boundaries (0, 0, innerWidth, innerHeight).
+### Step 1 — Show/hide state
 
-```text
-    ┌───────────────────────────┐
-    │          Tooltip          │
-    │  (Width x Height)         │
-    └─────────────┬─────────────┘
-                  │
-        ┌─────────┴─────────┐
-        │      Trigger      │
-        └───────────────────┘
+Track `isVisible` with `useState`. Set it on `mouseenter`/`focus` and clear on `mouseleave`/`blur`.
 
-CHECK RIGHT:
-Trigger.right + Tooltip.width  <=  window.innerWidth
+### Step 2 — Render tooltip with CSS positioning
 
-CHECK BOTTOM:
-Trigger.bottom + Tooltip.height <=  window.innerHeight
+Use `position: relative` on the container and `position: absolute` on the tooltip. Apply CSS classes for each position (top/bottom/left/right) that set the correct `top`/`left`/`transform`.
 
-CHECK LEFT:
-Trigger.left - Tooltip.width  >=  0
+### Step 3 — Auto-positioning with `useEffect`
 
-CHECK TOP:
-Trigger.top - Tooltip.height  >=  0
-```
+When `position === 'auto'` and the tooltip becomes visible:
+1. Get `tooltipRef.current.getBoundingClientRect()`
+2. Get `containerRef.current.getBoundingClientRect()`
+3. Get boundary rect
+4. Run the candidate check and update position state
 
-## Test Cases
+<details>
+<summary>💡 Hint — Why useEffect for auto-positioning?</summary>
 
-1. **Hover Test**: Mouse over the trigger -> Tooltip appears. Mouse out -> Tooltip disappears.
-2. **Focus Test**: Tab to trigger -> Tooltip appears. Tab away -> Tooltip disappears.
-3. **Auto Position Test**: Scroll the page or move the viewport such that the preferred position is blocked. Verify the tooltip flips to an available side.
-4. **Escape Key**: Focus the trigger, press Escape -> Tooltip disappears.
+You need the tooltip to be rendered in the DOM first (to measure its size with `getBoundingClientRect()`), then reposition it. This is a classic "measure after render" pattern. The tooltip briefly renders at the default position, then `useEffect` fires and moves it to the correct position.
+</details>
+
+<details>
+<summary>💡 Hint — CSS-only vs JS positioning</summary>
+
+For fixed positions (top/bottom/left/right), pure CSS with `position: absolute` and transforms works great. Auto-positioning requires JS because you need to measure actual pixel dimensions and compare against the boundary.
+</details>
+
+## Edge Cases
+
+| Scenario | Expected |
+|---|---|
+| Trigger near viewport edge | Auto mode flips to a position that fits |
+| No position fits | Falls back to `top` |
+| Tooltip content changes size | Repositions on next show |
+| Escape key pressed | Tooltip hides |
+| Focus then hover | Tooltip stays visible (both triggers active) |
+
+## Verification
+
+1. Hover trigger → tooltip appears at specified position.
+2. Move mouse away → tooltip disappears.
+3. Set `position="auto"`, place trigger near edge → tooltip flips.
+4. Tab to trigger → tooltip appears (focus).
+5. Press Escape → tooltip hides.

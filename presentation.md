@@ -4839,198 +4839,913 @@ We have broken this ultimate frontend interview problem down into **6 incrementa
 - **State management** (Complex reactive updates)
 - **Performance** (Rendering 500+ rows efficiently)
 
-Let's break down the engine module by module!
+Here's the full pipeline — each step builds on the previous one:
+
+```text
+ ┌─────────────────────────────────────────────────────────────────────┐
+ │                    Google Sheet Engine Pipeline                     │
+ │                                                                     │
+ │  19.1          19.2           19.3          19.4         19.5       │
+ │ ┌──────┐    ┌─────────┐    ┌────────┐    ┌──────┐    ┌──────────┐  │
+ │ │ Data │───►│ Compile │───►│ Topo   │───►│ Eval │───►│Recompute │  │
+ │ │Struct│    │ & Deps  │    │ Sort   │    │      │    │ Pipeline │  │
+ │ └──────┘    └─────────┘    └────────┘    └──────┘    └──────────┘  │
+ │                                                             │      │
+ │                                                        19.6 ▼      │
+ │                                                      ┌──────────┐  │
+ │                                                      │    UI    │  │
+ │                                                      └──────────┘  │
+ └─────────────────────────────────────────────────────────────────────┘
+```
+
+#### Provided Tools: `google-sheet-parser`
+
+Before you start coding, you get a **pre-built parser utility** (`src/utils/google-sheet-parser.ts`) that handles all the formula parsing math for you. You do NOT need to write a tokenizer or expression evaluator — these are provided so you can focus on the **engine architecture**.
+
+The utility exports three functions and several types:
+
+```text
+  ┌──────────────────────────────────────────────────────────────────┐
+  │                   google-sheet-parser API                        │
+  │                                                                  │
+  │  tokenize(expr)          toRpn(tokens)         evalRpn(rpn, fn) │
+  │  ┌──────────────┐       ┌──────────────┐       ┌──────────────┐ │
+  │  │ "B1+5"       │  ───► │ Infix → RPN  │  ───► │ Stack-based  │ │
+  │  │  ↓           │       │  ↓           │       │ evaluator    │ │
+  │  │ [ref, op,    │       │ [ref, num,   │       │  ↓           │ │
+  │  │  num]        │       │  op]         │       │ "15"         │ │
+  │  └──────────────┘       └──────────────┘       └──────────────┘ │
+  └──────────────────────────────────────────────────────────────────┘
+```
+
+**1. `tokenize(expr)` — String → Token[]**
+
+Converts a raw expression string into typed tokens. Handles numbers, cell references (`A1`–`Z99`), operators (`+`, `-`, `*`, `/`), parentheses, and unary negation (`NEG`).
+
+```typescript
+tokenize("B1+5")
+// → { ok: true, tokens: [{ t: 'ref', id: 'B1' }, { t: 'op', op: '+' }, { t: 'num', v: 5 }] }
+
+tokenize("invalid!!")
+// → { ok: false, error: 'Unexpected character: "!"' }
+```
+
+Token types:
+| Type | Shape | Example |
+|------|-------|---------|
+| Number | `{ t: 'num', v: number }` | `{ t: 'num', v: 5 }` |
+| Cell ref | `{ t: 'ref', id: CellId }` | `{ t: 'ref', id: 'B1' }` |
+| Operator | `{ t: 'op', op: Op }` | `{ t: 'op', op: '+' }` |
+| Left paren | `{ t: 'lp' }` | `{ t: 'lp' }` |
+| Right paren | `{ t: 'rp' }` | `{ t: 'rp' }` |
+
+**2. `toRpn(tokens)` — Infix Token[] → RPN Token[]**
+
+Converts infix-ordered tokens to **Reverse Polish Notation** using the Shunting-Yard algorithm. This eliminates parentheses and bakes in operator precedence:
+
+```typescript
+// (A1 + B1) * C1  →  A1 B1 + C1 *
+toRpn(tokens)
+// → { ok: true, rpn: [ref(A1), ref(B1), op(+), ref(C1), op(*)] }
+```
+
+Precedence: `NEG` (3) > `*`, `/` (2) > `+`, `-` (1). `NEG` is right-associative.
+
+**3. `evalRpn(rpn, resolveId)` — RPN Token[] → string result**
+
+Evaluates RPN tokens using a stack. Cell references are resolved via a **callback you provide**:
+
+```typescript
+evalRpn(rpnTokens, (cellId) => {
+  // Your engine looks up the cell's numeric value
+  // Return { ok: true, n: 10 } or { ok: false, err: '#ERROR' }
+})
+// → "15"  (or "#ERROR", "#DIV/0!", "#CYCLE!")
+```
+
+Error constants: `ERROR` (`"#ERROR"`), `CYCLE` (`"#CYCLE!"`), `DIV0` (`"#DIV/0!"`).
+
+**Key types:**
+
+```typescript
+type CellId = `${string}${number}`           // e.g. "A1", "B12"
+type Compiled = null                          // not a formula (plain text)
+             | { error: string }              // parse error
+             | { rpn: Token[] }               // successfully compiled
+```
+
+> **💡 Why provide these?** In a real interview, you might be asked to write a tokenizer — but the *interesting* part of a spreadsheet is the **reactive engine**: dependency tracking, topological sorting, cycle detection, and efficient recomputation. The parser is a tool, not the goal.
+
+Let's walk through the full pipeline with a concrete example before diving into each module.
+
+---
+
+### Slide 158.1: Google Sheets — End-to-End Pipeline Walkthrough
+
+Let's trace what happens when a user types `=A1+50` into cell **B1** (where A1 already contains `100`):
+
+```text
+  User types "=A1+50" into B1
+  │
+  ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ STEP 1: Store Raw Value (19.1 — Data Structures)                       │
+│                                                                         │
+│   raw["B1"] = "=A1+50"                                                  │
+│   Four maps hold the engine state:                                      │
+│     raw  → stores what the user typed                                   │
+│     val  → stores the computed display value                            │
+│     deps → which cells does B1 depend on?        → will be { A1 }      │
+│     rev  → which cells depend on A1?             → will include B1      │
+└────────────────────────────────┬────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ STEP 2: Compile the Formula (19.2 — Tokenize + RPN + Deps)             │
+│                                                                         │
+│   tokenize("A1+50")                                                     │
+│     → [{ t:'ref', id:'A1' }, { t:'op', op:'+' }, { t:'num', v:50 }]   │
+│                                                                         │
+│   toRpn(tokens)                                                         │
+│     → [ref(A1), num(50), op(+)]          ← Reverse Polish Notation     │
+│                                                                         │
+│   Extract deps from ref tokens → deps["B1"] = { "A1" }                 │
+│   Update reverse map           → rev["A1"].add("B1")                   │
+│                                                                         │
+│   compiled["B1"] = { rpn: [ref(A1), num(50), op(+)] }                  │
+└────────────────────────────────┬────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ STEP 3: Topological Sort (19.3 — Dependency Order)                      │
+│                                                                         │
+│   Which cells need recalculating? B1 changed, and anything that         │
+│   depends on B1 (via rev map) must also update.                         │
+│                                                                         │
+│   Build dependency graph starting from B1:                              │
+│     A1 ──► B1  (B1 depends on A1)                                      │
+│                                                                         │
+│   Kahn's algorithm produces evaluation order: [ A1, B1 ]                │
+│   (A1 first because B1 depends on it)                                   │
+│                                                                         │
+│   ⚠ If A1 → B1 → A1 were found, mark as #CYCLE!                       │
+└────────────────────────────────┬────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ STEP 4: Evaluate (19.4 — Compute Values)                                │
+│                                                                         │
+│   Walk the sorted order and evaluate each cell's RPN:                   │
+│                                                                         │
+│   A1: raw = "100" (plain number, no formula)                            │
+│       → val["A1"] = "100"                                               │
+│                                                                         │
+│   B1: compiled = { rpn: [ref(A1), num(50), op(+)] }                    │
+│       evalRpn(rpn, resolver)                                            │
+│         Stack: [] → push 100 → [100]                                    │
+│                     push 50  → [100, 50]                                │
+│                     op(+)    → pop 50,100 → push 150 → [150]           │
+│       → val["B1"] = "150"                                               │
+└────────────────────────────────┬────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ STEP 5: Recompute Pipeline (19.5 — Putting It All Together)             │
+│                                                                         │
+│   The setCellValue("B1", "=A1+50") method orchestrates steps 1–4:      │
+│                                                                         │
+│     1. Store raw value                                                  │
+│     2. Compile formula → get RPN + deps                                 │
+│     3. Find all affected cells (B1 + its dependents via rev map)        │
+│     4. Topo-sort them                                                   │
+│     5. Detect cycles → mark with #CYCLE!                                │
+│     6. Evaluate in order → update val map                               │
+│                                                                         │
+│   Now if A1 changes to 200, the engine automatically:                   │
+│     • Finds B1 via rev["A1"]                                            │
+│     • Re-evaluates B1 → val["B1"] = "250"                              │
+└────────────────────────────────┬────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ STEP 6: Render the UI (19.6 — Virtual Scrolling + DOM)                  │
+│                                                                         │
+│   Only visible rows are rendered (virtualization).                       │
+│   When val["B1"] updates, the UI patches just that cell's DOM node.    │
+│   User sees: B1 displays "150"                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**Key insight:** Each step is a pure function that takes the output of the previous step. This makes the engine testable, debuggable, and incrementally buildable — which is exactly how we'll tackle it!
 
 ---
 
 ### Slide 159: 19.1 Basic Getters & Setters
 
-#### Input Data Sample
+The core of a spreadsheet is its **Reactive Engine** — the invisible brain that tracks every cell's content, computed result, and relationships. Before we can handle formulas or build a UI, we need a rock-solid data model.
 
-A basic spreadsheet engine requires tracking raw cell values (including formulas) and identifying a way to retrieve their evaluated results and relationships.
+#### The Quad-Map Architecture
 
-```typescript
-const rawData = new Map([
-  ['A1', '10'],
-  ['A2', '20'],
-  ['A3', '=A1+A2'], // Formula referencing other cells
-  ['B1', '=A3 * 2'],
-])
+A performant spreadsheet engine uses **four primary mappings**:
+
+```text
+       ┌──────────┐      ┌──────────┐
+       │   raw    │      │  value   │
+       │ (String) │      │ (Result) │
+       └────┬─────┘      └────▲─────┘
+            │                 │
+      (Compilation)      (Evaluation)
+            │                 │
+       ┌────▼─────┐      ┌────┴─────┐
+       │   deps   │      │   rev    │
+       │ (Direct) │      │(Inverse) │
+       └──────────┘      └──────────┘
 ```
+
+| Map | Key | Value | Example |
+|-----|-----|-------|---------|
+| **`raw`** | `CellId` | The literal string the user typed | `"A1"` → `"=B1+5"` |
+| **`value`** | `CellId` | The final computed display result | `"A1"` → `"15"` |
+| **`deps`** | `CellId` | `Set` of cells **this cell depends on** | `"A1"` → `{B1}` |
+| **`rev`** | `CellId` | `Set` of cells that **depend on this cell** | `"B1"` → `{A1}` |
+
+> **💡 Why `deps` AND `rev`?** When the user edits `B1`, we need to instantly find all cells affected by that change. Without `rev`, we'd have to scan *every* cell's `deps` — that's O(n) per edit! With `rev`, it's O(1) lookup.
 
 #### Step-by-Step Implementation
 
-1. **Setup Hash Maps**: Instantiate the `TableEngine` to track 4 `Map` structures:
-   - `#raw`: What the user typed (`"10"` or `"=A1+5"`)
-   - `#value`: The computed mathematical result (`"10"` or `"15"`)
-   - `#deps`: Direct dependencies (`A1` requires `B1` to compute)
-   - `#revDeps`: Reverse dependencies (`B1` affects `A1`, so `A1` recomputes if `B1` changes)
+1. **Setup Hash Maps**: Instantiate the `TableEngine` with 4 private `Map` structures (`#raw`, `#value`, `#deps`, `#rev`).
 
-2. **Basic Read APIs**: Implement `getValue`, `getRaw`, `getDeps`, `getRevDeps`. 
+2. **Basic Read APIs**: Implement `getValue`, `getRaw`, `getDeps`, `getRevDeps`. Return `''` for unset cells.
 
-3. **Fallback Factory**: For `getDeps`/`getRevDeps`, if the Map `get()` returns undefined, initialize and `#set` a new empty `Set<CellId>()` instead of throwing errors.
+3. **Fallback Factory (Lazy Initialization)**: For `getDeps`/`getRevDeps`, if the Map `get()` returns undefined, initialize a new empty `Set<CellId>()`, store it back in the map, and return it. This avoids `undefined` checks everywhere in consumer code.
 
-4. **Basic Write API**: Create a `setRaw(id, raw)` method that blindly sets `#raw` and `#value` without any compilation or error checking yet. Return `{ changed: [id] }`.
+```typescript
+getDeps(id: CellId): ReadonlySet<CellId> {
+  let s = this.#deps.get(id)
+  if (!s) {
+    s = new Set<CellId>()
+    this.#deps.set(id, s)
+  }
+  return s
+}
+```
+
+4. **Basic Write API**: Create a `setRaw(id, raw)` method that blindly sets `#raw` and `#value` (same value for now — no compilation yet). Return `{ changed: [id] }`.
+
+#### Code Sample
+
+```typescript
+export class TableEngine {
+  #raw: Map<CellId, string> = new Map()
+  #value: Map<CellId, string> = new Map()
+  #deps: Map<CellId, Set<CellId>> = new Map()
+  #rev: Map<CellId, Set<CellId>> = new Map()
+
+  setRaw(id: CellId, raw: string): { changed: CellId[] } {
+    this.#raw.set(id, raw)
+    this.#value.set(id, raw)  // No compilation yet — value = raw
+    return { changed: [id] }
+  }
+
+  getRaw(id: CellId): string { return this.#raw.get(id) ?? '' }
+  getValue(id: CellId): string { return this.#value.get(id) ?? '' }
+
+  getDeps(id: CellId): ReadonlySet<CellId> {
+    return this.#getDeps(id)
+  }
+  getRevDeps(id: CellId): ReadonlySet<CellId> {
+    return this.#getRevDeps(id)
+  }
+
+  // Lazy initialization — avoids undefined checks everywhere
+  #getDeps(id: CellId): Set<CellId> {
+    let s = this.#deps.get(id)
+    if (!s) { s = new Set<CellId>(); this.#deps.set(id, s) }
+    return s
+  }
+  #getRevDeps(id: CellId): Set<CellId> {
+    let s = this.#rev.get(id)
+    if (!s) { s = new Set<CellId>(); this.#rev.set(id, s) }
+    return s
+  }
+}
+```
 
 ---
 
 ### Slide 160: 19.2 Compilation
 
-#### Input Data Sample
+Now we need to understand the **relationships between cells**. If `A1` contains `"=B1 + 5"`, then `A1` depends on `B1`. We'll implement compilation logic that converts raw strings into an AST and extracts dependencies.
 
-Parsing mathematical expressions is a classic Computer Science problem, typically solved using **Reverse Polish Notation (RPN)** and the **Shunting-Yard algorithm**. 
+#### The Compilation Pipeline
 
-To keep this problem focused on React and Data Structures, **we have provided the parser for you**!
+We provide a `google-sheet-parser` utility. Here's the full flow:
 
-`"=A1 + B2 * 10"` becomes:
-1. Tokenize into logic blocks.
-2. Reverse Polish Notation stream (AST).
-3. Dependency mapping (Found `A1` and `B2` references).
+```text
+  INPUT RAW         TOKENIZE            TO RPN           DEPS EXTRACT
+ ┌─────────┐      ┌──────────┐      ┌───────────┐      ┌─────────────┐
+ │ "=B1+5" │ ───► │ [REF,+,5]│ ───► │ [B1, 5, +]│ ───► │  Set { B1 } │
+ └─────────┘      └──────────┘      └───────────┘      └─────────────┘
+```
+
+**What is RPN?** Normal math: `B1 + 5`. RPN (postfix): `B1 5 +`. RPN eliminates parentheses and precedence rules — you just read left to right with a stack:
+
+```text
+Infix:    (A1 + B1) * C1
+RPN:       A1  B1  +  C1  *
+
+Stack trace:
+  Push A1     → [A1]
+  Push B1     → [A1, B1]
+  Apply +     → [A1+B1]
+  Push C1     → [A1+B1, C1]
+  Apply *     → [(A1+B1)*C1]  ✓
+```
 
 #### Step-by-Step Implementation
 
-1. **Import the Parser**: Bring in `tokenize(expr)` and `toRpn(tokens)`.
-2. **Build `#compile`**:
-   - Check if `raw` starts with `=`. If not, just delete any existing compiled state for this `id` and return an empty `Set` of dependencies.
-   - Run `tokenize` and `toRpn`. If either returns `ok: false`, save the `{ error: xxx }` state to the `#compiled` map and return an empty `Set`.
-   - Iterate over the final `rpn` tokens. If a token is of type `ref`, log its `id` to your dependencies set!
-3. **Build `#setDeps`**:
-   - Given a cell `id` and its newly computed `Set` of `nextDeps` from `#compile`...
+1. **Build `#compile`** — the core parsing method:
+
+```text
+  raw string
+      │
+      ▼
+  Starts with "="?
+  ┌───┴───┐
+  │ NO    │ YES
+  ▼       ▼
+ Store   Strip "=" → tokenize(expr)
+ null              │
+ Return         ┌──┴──┐
+ empty Set      │ ERR │ OK → toRpn(tokens)
+                ▼     │
+               Store  ┌──┴──┐
+               error  │ ERR │ OK
+                      ▼     ▼
+                     Store  Store rpn, extract refs → return Set
+                     error
+```
+
+2. **Build `#setDeps`** — maintain the bidirectional dependency graph:
+   - Given a cell `id` and its newly computed `nextDeps` from `#compile`...
    - Grab its `prevDeps` from state.
-   - For every old dependency no longer present in the new set, *delete* `id` from that dependency's `#revDeps`.
-   - For every new dependency not present in the old set, *add* `id` to that dependency's `#revDeps`.
-   - Safe to forcefully update the `#deps` map now!
+   - For every old dep no longer present → *delete* `id` from that dep's `#rev`.
+   - For every new dep not previously present → *add* `id` to that dep's `#rev`.
+   - Update the `#deps` map.
+
+```text
+Example: A1 formula changes from "=B1+C1" to "=B1+D1"
+
+  prevDeps = {B1, C1}    nextDeps = {B1, D1}
+
+  Removed: C1  → C1.rev.delete(A1)
+  Added:   D1  → D1.rev.add(A1)
+  Kept:    B1  → no change
+```
+
+#### Code Sample
+
+```typescript
+#compiled: Map<CellId, Compiled> = new Map()
+
+#compile(id: CellId, raw: string): Set<CellId> {
+  const deps = new Set<CellId>()
+  raw = raw.trim()
+  if (!raw.startsWith('=')) {
+    this.#compiled.set(id, null)   // literal — no formula
+    return deps
+  }
+  const expr = raw.slice(1).trim()
+  const tokens = tokenize(expr)
+  if (!tokens.ok) {
+    this.#compiled.set(id, { error: tokens.error })
+    return deps
+  }
+  const rpn = toRpn(tokens.tokens)
+  if (!rpn.ok) {
+    this.#compiled.set(id, { error: rpn.error })
+    return deps
+  }
+  for (const t of rpn.rpn) {
+    if (t.t === 'ref') deps.add(t.id)
+  }
+  this.#compiled.set(id, { rpn: rpn.rpn })
+  return deps
+}
+
+#setDeps(id: CellId, nextDeps: Set<CellId>) {
+  const prevDeps = this.#getDeps(id)
+  for (const dep of prevDeps) {
+    if (!nextDeps.has(dep)) this.#getRevDeps(dep).delete(id)
+  }
+  for (const dep of nextDeps) {
+    if (!prevDeps.has(dep)) this.#getRevDeps(dep).add(id)
+  }
+  this.#deps.set(id, nextDeps)
+}
+
+// Updated setRaw — now compiles and tracks deps
+setRaw(id: CellId, raw: string): { changed: CellId[] } {
+  this.#raw.set(id, raw)
+  this.#value.set(id, raw)          // still no evaluation yet
+  const deps = this.#compile(id, raw)
+  this.#setDeps(id, deps)
+  return { changed: [id] }
+}
+```
 
 ---
 
 ### Slide 161: 19.3 Topological Sorting
 
-#### Input Data Sample
+When you edit cell `A1`, you need to know **which other cells are affected** and **in what order** they should be recomputed. This is a classic **Topological Sorting** problem.
 
-Here's the problem: When `A1` changes, which cells need recalculating?
+#### Why Topological Sorting?
 
+```text
+  ┌─────┬──────────┬──────────┬──────────┐
+  │     │    A     │    B     │    C     │
+  ├─────┼──────────┼──────────┼──────────┤
+  │  1  │   10     │  =A1+5   │  =B1*2   │
+  └─────┴──────────┴──────────┴──────────┘
+
+  Dependency graph:  A1 ───► B1 ───► C1
 ```
-A1 = 10
-B1 = 20
-C1 = A1 + B1  (depends on A1, B1)
-D1 = C1 * 2   (depends on C1)
+
+If the user changes `A1` to `20`, `B1` must be recomputed **before** `C1` (because C1 depends on B1's new value). Topological sorting gives us the safe order: `[A1, B1, C1]`.
+
+#### What About Cycles?
+
+```text
+  A1 = "=B1"    B1 = "=A1"
+
+  A1 ───► B1
+   ▲       │
+   └───────┘    ← CYCLE! Neither can be computed first.
 ```
 
-If A1 changes, we need to recalculate C1 BEFORE D1!
+Cells trapped in a cycle are marked `#CYCLE!`.
 
-Editing `A1` might affect `B1`, which affects `C1`. What if `C1` affects `A1`? That's an infinite loop (`#CYCLE!`)!
+#### Kahn's Algorithm Walkthrough
+
+Let's trace through with `A1 → B1 → C1`:
+
+**Phase 1: Find affected set** (BFS from edited cell using `rev`):
+
+```text
+Start: A1 was edited
+  rev(A1) = {B1}     → add B1 to affected
+  rev(B1) = {C1}     → add C1 to affected
+  rev(C1) = {}       → done
+
+Affected set = {A1, B1, C1}
+```
+
+**Phase 2: Calculate in-degrees** (count deps within the affected set):
+
+```text
+  A1: deps = {}           → in-degree = 0
+  B1: deps = {A1}         → in-degree = 1
+  C1: deps = {B1}         → in-degree = 1
+```
+
+**Phase 3: Process queue**:
+
+```text
+Queue starts with in-degree 0 nodes: [A1]
+
+  Pop A1 → order = [A1]
+    rev(A1) has B1 → B1's in-degree: 1→0 → push B1
+  
+  Pop B1 → order = [A1, B1]
+    rev(B1) has C1 → C1's in-degree: 1→0 → push C1
+  
+  Pop C1 → order = [A1, B1, C1]
+
+Queue empty. Result: [A1, B1, C1] ✓
+```
+
+**Phase 4: Cycle detection** — any cells in `affected` that didn't make it into `order` are caught in a cycle!
 
 #### Step-by-Step Implementation
 
-1. **Build `#affectedFrom`**:
-   - Given a `start` cell `id`, run a **Breadth First Search (BFS)** across all of its `getRevDeps()`.
-   - Maintain an `affected` Set to track visited nodes.
-   - Using a `queue` array, iteratively push the cell's reverse dependencies onto the backlog until all downstream nodes are exhausted. Return the `affected` set.
+1. **Build `#affectedFrom`**: BFS from the start cell across `getRevDeps()`. Maintain an `affected` Set of visited nodes. Return the full set.
 
 2. **Build `#topoSort` using Kahn's algorithm**:
-   - Accept the `affected` Set. Create a temporary `Map<CellId, number>` to track "in-degrees".
-   - **Calculate initial weights**: Iterate through every cell in the `affected` set. For each of its `getDeps()`, increment its in-degree count ONLY IF the dependency is ALSO inside the `affected` set.
-   - **Cull the queue**: Push all cells with an in-degree of `0` into a processing `queue`.
-   - **Process ordering**: Iterate through the processing `queue` (adding them to the final `order` timeline). As you process a node, decrement the in-degree score of all its `getRevDeps()`. If a descending node falls to an in-degree of `0`, immediately push it onto the processing `queue`!
-   - **Cycle Detection**: Any cells in the original `affected` set that didn't make it into your final `order` timeline are caught in an unbreakable circular reference!
+   - Calculate in-degrees: for each cell in `affected`, count how many of its `getDeps()` are ALSO in `affected`.
+   - Seed the queue with all in-degree `0` cells.
+   - Process: pop from queue → add to `order` → decrement in-degrees of its `getRevDeps()` → push any that hit `0`.
+   - Cycle detection: cells remaining in `affected` but not in `order` are cyclic.
+
+#### Code Sample
+
+```typescript
+#affectedFrom(start: CellId): Set<CellId> {
+  const affected = new Set<CellId>()
+  const queue: CellId[] = [start]
+  for (let i = 0; i < queue.length; i++) {
+    const id = queue[i]!
+    if (affected.has(id)) continue
+    affected.add(id)
+    for (const dep of this.#getRevDeps(id)) queue.push(dep)
+  }
+  return affected
+}
+
+#topoSort(affected: Set<CellId>): { order: CellId[]; cyclic: Set<CellId> } {
+  // Phase 2: in-degrees
+  const inDegree = new Map<CellId, number>()
+  for (const id of affected) {
+    let deg = 0
+    for (const dep of this.#getDeps(id)) {
+      if (affected.has(dep)) deg++
+    }
+    inDegree.set(id, deg)
+  }
+  // Phase 3: BFS from in-degree 0
+  const queue: CellId[] = []
+  for (const [id, deg] of inDegree) {
+    if (deg === 0) queue.push(id)
+  }
+  const order: CellId[] = []
+  for (let i = 0; i < queue.length; i++) {
+    const id = queue[i]!
+    order.push(id)
+    for (const dependent of this.#getRevDeps(id)) {
+      if (!affected.has(dependent)) continue
+      const next = (inDegree.get(dependent) ?? 0) - 1
+      inDegree.set(dependent, next)
+      if (next === 0) queue.push(dependent)
+    }
+  }
+  // Phase 4: cycle detection
+  const cyclic = new Set<CellId>()
+  if (order.length !== affected.size) {
+    const inOrder = new Set(order)
+    for (const id of affected) {
+      if (!inOrder.has(id)) cyclic.add(id)
+    }
+  }
+  return { order, cyclic }
+}
+```
 
 ---
 
 ### Slide 162: 19.4 Single Cell Evaluation
 
-#### Input Data Sample
+We have the graph and the order, but we still aren't calculating any math! Now we implement the evaluation logic that executes compiled RPN tokens to produce actual values.
 
-Evaluating a compiled formula is just stacking operations dynamically based on the AST payload tokens.
+#### The Resolver Pattern
 
-Tokens: `[ {t:'ref', id:'A1'}, {t:'val', n:5}, {t:'op', op:'+'} ]`
+When the parser encounters a cell reference like `B1` during RPN evaluation, it doesn't know what `B1`'s value is — that's **your engine's** job. You provide a **resolver callback**:
+
+```text
+  evalRpn([B1, 10, +], resolver)         Your TableEngine
+ ┌──────────────────────────┐          ┌─────────────────────┐
+ │                          │          │                     │
+ │ 1. See token B1 (ref)   │──────────│► resolver("B1")     │
+ │                          │          │  → look up #value   │
+ │ 2. Receive value 5      │◄─────────│  → parse as number  │
+ │                          │          │  → return { ok, n } │
+ │ 3. See token 10 (num)   │          │                     │
+ │ 4. See token + (op)     │          └─────────────────────┘
+ │ 5. Compute 5 + 10 = 15  │
+ │ 6. Return "15"          │
+ └──────────────────────────┘
+```
+
+#### Why Topo Sort Matters Here
+
+The resolver looks up values from the `#value` map. This only works if dependencies have **already been evaluated**:
+
+```text
+  Evaluation order: [A1, B1, C1]
+
+  Step 1: Eval A1 → literal "10" → value = "10"  ✓
+  Step 2: Eval B1 = "=A1+5"
+          resolver("A1") → "10" → 10
+          10 + 5 = 15 → value = "15"  ✓
+  Step 3: Eval C1 = "=B1*2"
+          resolver("B1") → "15" → 15
+          15 * 2 = 30 → value = "30"  ✓
+```
 
 #### Step-by-Step Implementation
 
-1. **Build `#parseNumericCellValue`**:
-   - A helper to securely fetch actual digit values from the engine when executing a math equation.
-   - If the engine `#value` is blank, resolve to `0`.
-   - If the engine `#value` starts with `#` (like `#CYCLE!` or `#DIV/0!`), early-return the inherited error down the chain!
-   - If `!Number.isFinite(n)`, return an `#ERROR`. Lookups must be strictly numerical.
+1. **Build `#parseNumericCellValue`** — the bridge between `evalRpn` and your engine state:
+
+```text
+  Get value from #value map
+      │
+      ▼
+  Empty/null?  ──YES──► return { ok: true, n: 0 }
+      │ NO
+      ▼
+  Starts with "#"? ──YES──► return { ok: false, err: value }
+      │ NO                   (propagate #CYCLE!, #DIV/0!, etc.)
+      ▼
+  parseFloat → NaN? ──YES──► return { ok: false, err: "#ERROR" }
+      │ NO
+      ▼
+  return { ok: true, n: parsed }
+```
 
 2. **Build `_evalCell`**:
-   - The cell execution pipeline. If it doesn't start with `=`, just return the `#raw` text.
-   - Fetch the `#compiled` properties for this cell. If it failed to compile in 19.2, it contains an `{ error }` to return!
-   - Finally, run the `evalRpn` library utility, passing in your RPN formula stream and `this.#parseNumericCellValue.bind(this)` to serve as the external data lookup adapter!
+   - If raw doesn't start with `=`, return the `#raw` text (it's a literal).
+   - Fetch `#compiled` for this cell. If it has an `{ error }`, return the error string.
+   - Run `evalRpn(rpn, this.#parseNumericCellValue.bind(this))` to execute the formula!
+
+#### Code Sample
+
+```typescript
+#parseNumericCellValue(id: CellId): { ok: true; n: number } | { ok: false; err: string } {
+  const v = (this.#value.get(id) ?? '').trim()
+  if (v === '') return { ok: true, n: 0 }           // empty = 0
+  if (v.startsWith('#')) return { ok: false, err: v } // propagate errors
+  const n = Number(v)
+  if (!Number.isFinite(n)) return { ok: false, err: ERROR }
+  return { ok: true, n }
+}
+
+_evalCell(id: CellId): string {
+  const raw = (this.#raw.get(id) ?? '').trim()
+  if (!raw.startsWith('=')) return raw               // literal value
+  const compiled = this.#compiled.get(id)
+  if (!compiled) return ERROR
+  if ('error' in compiled) return ERROR
+  return evalRpn(compiled.rpn, (refId) => this.#parseNumericCellValue(refId))
+}
+
+// Updated setRaw — now evaluates the cell
+setRaw(id: CellId, raw: string): { changed: CellId[] } {
+  this.#raw.set(id, raw)
+  const deps = this.#compile(id, raw)
+  this.#setDeps(id, deps)
+  const next = this._evalCell(id)
+  this.#value.set(id, next)
+  return { changed: [id] }
+}
+```
 
 ---
 
 ### Slide 163: 19.5 Engine Recomputation
 
-#### Input Data Sample
+This is the **final logic step** — the moment everything clicks together. Wire up the full reactive pipeline so that editing a single cell automatically recomputes all affected cells in the correct order.
 
-Tying the entire Engine together! `setRaw('A1', '10')` must run compilation, sorting, and mathematical evaluation autonomously over the entire sheet.
+#### End-to-End Walkthrough
 
+```text
+Initial state:
+  A1 = "10"       → value = "10"
+  B1 = "=A1+5"    → value = "15"
+  C1 = "=B1*2"    → value = "30"
+
+User changes A1 to "20":
+
+  Step 1: setRaw("A1", "20")
+    → #compile("A1", "20") → literal, no deps
+    → #setDeps("A1", {})
+
+  Step 2: #recomputeFrom("A1")
+    → #affectedFrom("A1"):  BFS via rev → {A1, B1, C1}
+    → #topoSort({A1, B1, C1}):  order = [A1, B1, C1], cyclic = {}
+
+  Step 3: Evaluate in order
+    A1: _evalCell("A1") → "20" (literal)
+    B1: _evalCell("B1") → resolver("A1")=20 → 20+5 = "25"
+    C1: _evalCell("C1") → resolver("B1")=25 → 25*2 = "50"
+
+  Return: { changed: ["A1", "B1", "C1"] }
 ```
-┌─────────────────────────────────────────────────────┐
-│                    TableEngine                       │
-├─────────────────────────────────────────────────────┤
-│  setRaw("A1", "=B1+C1")                             │
-│        │                                             │
-│        ▼                                             │
-│  ┌──────────┐    ┌──────────┐    ┌──────────┐       │
-│  │ Compile  │───▶│ Update   │───▶│ Recompute│       │
-│  │ (19.2)   │    │  Deps    │    │  (19.3/4)│       │
-│  └──────────┘    └──────────┘    └──────────┘       │
-│        │              │               │              │
-│        ▼              ▼               ▼              │
-│   #compiled       #deps/#rev     Eval cells         │
-│                                  in Topo order      │
-│                                       │              │
-│                                       ▼              │
-│                              { changed: [...] }      │
-└─────────────────────────────────────────────────────┘
+
+#### Cycle Handling
+
+```text
+  A1 = "=B1"    B1 = "=A1"
+
+  #recomputeFrom("A1"):
+    affected = {A1, B1}
+    topoSort → order = [], cyclic = {A1, B1}
+
+  Handle cycles first:
+    #value("A1") = "#CYCLE!"
+    #value("B1") = "#CYCLE!"
+
+  Return: { changed: ["A1", "B1"] }
 ```
+
+**Why handle cycles first?** If any non-cyclic cell references a cyclic cell, the resolver will see `#CYCLE!` and propagate the error correctly.
 
 #### Step-by-Step Implementation
 
 1. **Build `#recomputeFrom`**:
-   - Pass the edited `start` cell `id` into `#affectedFrom`. 
-   - Pass that output into `#topoSort`.
-   - Create a `changed` array.
-   - Iterate over the `cyclic` array outputted from your Topo sort, and force update their `engine.#value` maps to `#CYCLE!`. Push them to `changed`.
-   - Iterate over the `order` chronological timeline outputted from your Topo sort. Ensure the cell is not in the circular array, then run `this._evalCell()` on it! Update its `engine.#value` to whatever the AST computed. Push to `changed`!
+   - `affected = #affectedFrom(start)`
+   - `{ order, cyclic } = #topoSort(affected)`
+   - Mark all `cyclic` cells with `#CYCLE!` in `#value`
+   - Evaluate all `order` cells sequentially with `_evalCell()`, updating `#value`
+   - Return `{ changed: [...order, ...cyclic] }`
 
-2. **Finalize `setRaw`**:
-   - Ensure the overarching `setRaw` triggers compilation, dependency tracking, AND `#recomputeFrom()` sequentially, returning the `.changed` list back to the user interface!
+2. **Finalize `setRaw`** — the full pipeline:
+
+```text
+setRaw(id, raw):
+  1. this.#raw.set(id, raw)
+  2. const deps = this.#compile(id, raw)
+  3. this.#setDeps(id, deps)
+  4. return this.#recomputeFrom(id)
+```
+
+> Note: We no longer set `#value` directly in `setRaw` — that's now handled inside `#recomputeFrom`.
+
+#### Code Sample
+
+```typescript
+#recomputeFrom(start: CellId): CellId[] {
+  const affected = this.#affectedFrom(start)
+  const { order, cyclic } = this.#topoSort(affected)
+  const changed: CellId[] = []
+  // Handle cycles first — so non-cyclic cells see #CYCLE! via resolver
+  for (const id of cyclic) {
+    const prev = this.#value.get(id) ?? ''
+    if (prev !== CYCLE) {
+      this.#value.set(id, CYCLE)
+      changed.push(id)
+    }
+  }
+  // Evaluate in topological order
+  for (const id of order) {
+    if (cyclic.has(id)) continue
+    const prev = this.#value.get(id) ?? ''
+    const next = this.#evalCell(id)
+    if (prev !== next) {
+      this.#value.set(id, next)
+      changed.push(id)
+    }
+  }
+  return changed
+}
+
+// Final setRaw — the complete pipeline
+setRaw(id: CellId, raw: string): { changed: CellId[] } {
+  this.#raw.set(id, raw)
+  const deps = this.#compile(id, raw)
+  this.#setDeps(id, deps)
+  return { changed: this.#recomputeFrom(id) }
+}
+```
 
 ---
 
 ### Slide 164: 19.6 Google Sheet UX
 
-#### Input Data Sample
+Finally, the visual part! Take your logic engine and turn it into a **high-performance spreadsheet UI**. The challenge here is performance: thousands of cells with smooth scrolling and instant updates.
 
-Finally, the visual part! Building a spreadsheet UI with React. A 50x26 virtualized UI matrix representing `TableEngine`.
+#### The Problem with Naive Rendering
 
-```
-┌──────────────────────────────────────────────┐
-│   │  A  │  B  │  C  │  D  │  ...             │  ← Column Headers
-├───┼─────┼─────┼─────┼─────┼─────             │
-│ 1 │ 10  │ 20  │ 30  │     │                  │  ← Row 1
-├───┼─────┼─────┼─────┼─────┼─────             │
-│ 2 │     │     │     │     │                  │  ← Row 2
-├───┼─────┼─────┼─────┼─────┼─────             │
-│...│                                          │  ← 500 rows!
-└──────────────────────────────────────────────┘
+A 50×50 grid = 2,500 cells. If each cell is a React component with its own state:
+
+```text
+Naive approach:
+  2,500 React components
+  × re-render on every scroll
+  × re-render on every cell edit (dependency cascade)
+  = 😱 Laggy, unusable UI
 ```
 
-#### Step-by-Step Implementation
+We solve this with **three techniques**:
 
-1. **Instantiate the Engine**:
-   - Keep a resilient UI pointer to a `new TableEngine()` reference somewhere inside the component.
+#### 1. Row Virtualization
 
-2. **Pre-render 500 Static Rows**:
-   - Do NOT map 500 rows into individual stateful React components. The DOM bloat will destroy frames during fast typing!
-   - Mount the cells as static HTML JSX payloads generated *outside* the component tree. Render them once!
+Only render the rows currently visible in the viewport:
 
-3. **Event Delegation (`onFocusCapture` / `onBlurCapture`)**:
-   - Only apply event listeners to the top-level parent `div[role=grid]`, allowing React `SyntheticEvent` bubbling to trace which sub-cell within the 500-cell block was interacted with.
-   - When a child `contentEditable` div triggers focus, mutate its `event.target.textContent` manually to its `engine.getRaw()` counterpart.
-   - When a child blurs, mutate its `textContent` back to the result of `engine.getValue()`. Since the engine processes upstream dependants, also ensure you map over the returned `changed` cells from `engine.setRaw()`, mutating their downstream text nodes manually too using native `document.querySelector` tools!
+```text
+  Total grid: 100 rows × 30px = 3000px tall
+
+  ┌─────────────────────────┐
+  │  Scroll container        │
+  │                          │
+  │  ┌─────────────────────┐ │
+  │  │ Spacer div           │ │  ← height: 3000px (total)
+  │  │                      │ │
+  │  │  ╔══════════════════╗│ │
+  │  │  ║ Row 15           ║│ │  ← Only visible rows
+  │  │  ║ Row 16           ║│ │    are actual DOM elements
+  │  │  ║ Row 17           ║│ │
+  │  │  ╚══════════════════╝│ │
+  │  │                      │ │
+  │  └─────────────────────┘ │
+  └─────────────────────────┘
+
+  Algorithm:
+    startRow = Math.floor(scrollTop / ROW_HEIGHT)
+    endRow   = startRow + Math.ceil(viewportHeight / ROW_HEIGHT)
+```
+
+#### 2. Event Delegation
+
+Instead of attaching handlers to every cell, attach **one handler** to the grid parent:
+
+```text
+  ┌─────────────────────────────────┐
+  │ Grid Parent                      │
+  │ onFocusCapture  onBlurCapture    │  ← Single event listener
+  │                                  │
+  │  ┌──────┐ ┌──────┐ ┌──────┐    │
+  │  │ A1   │ │ B1   │ │ C1   │    │  ← Events bubble up
+  │  └──────┘ └──────┘ └──────┘    │
+  └─────────────────────────────────┘
+```
+
+**Why `onFocusCapture`?** Focus/blur events don't bubble natively, but their capture variants do — more reliable for delegation.
+
+- On **focus**: swap `textContent` to `engine.getRaw(id)` (show the formula)
+- On **blur**: call `engine.setRaw(id, text)`, then update the cell and all `changed` cells
+
+#### 3. Imperative DOM Updates
+
+When a cell edit triggers a cascade, **don't re-render React**. Update the DOM directly:
+
+```text
+  User edits A1 → engine.setRaw("A1", "20")
+                → returns { changed: ["A1", "B1", "C1"] }
+
+  For each changed ID:
+    const el = document.querySelector(`[data-cell-id="${id}"]`)
+    el.textContent = engine.getValue(id)
+
+  Result: 3 DOM updates, zero React re-renders ⚡
+```
+
+#### Code Sample
+
+```tsx
+const ROW_HEIGHT = 30
+const MAX_ROWS = 500
+const engine = new TableEngine()
+
+function GoogleSheet() {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [startRow, setStartRow] = useState(0)
+
+  // 1. Virtualization — only render visible rows
+  const onScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const scrollTop = e.currentTarget.scrollTop
+    setStartRow(Math.floor(scrollTop / ROW_HEIGHT))
+  }
+  const visibleCount = Math.ceil(400 / ROW_HEIGHT) // viewport height / row height
+  const rows = Array.from({ length: visibleCount }, (_, i) => startRow + i + 1)
+
+  // 2. Event delegation — single handler on the grid parent
+  const onFocusCapture = (e: React.FocusEvent) => {
+    const cell = e.target as HTMLElement
+    const col = cell.dataset.column
+    const row = Number(cell.dataset.row)
+    if (!col || !row) return
+    cell.textContent = engine.getRaw(toCellReference(row, col))
+  }
+
+  const onBlurCapture = (e: React.FocusEvent) => {
+    const cell = e.target as HTMLElement
+    const col = cell.dataset.column
+    const row = Number(cell.dataset.row)
+    if (!col || !row) return
+    const id = toCellReference(row, col)
+    const { changed } = engine.setRaw(id, cell.textContent ?? '')
+    // 3. Imperative DOM updates — skip React re-render
+    for (const changedId of changed) {
+      const el = containerRef.current?.querySelector(
+        `[data-column="${fromCellReference(changedId).col}"][data-row="${fromCellReference(changedId).row}"]`
+      ) as HTMLElement | null
+      if (el) el.textContent = engine.getValue(changedId)
+    }
+  }
+
+  return (
+    <div ref={containerRef} onScroll={onScroll} style={{ height: 400, overflow: 'auto' }}>
+      <div style={{ height: MAX_ROWS * ROW_HEIGHT }}>
+        <div
+          style={{ transform: `translateY(${startRow * ROW_HEIGHT}px)` }}
+          onFocusCapture={onFocusCapture}
+          onBlurCapture={onBlurCapture}
+        >
+          {rows.map(row => (
+            <div key={row} role="row">
+              {COLS.map(col => (
+                <div key={col} role="gridcell" contentEditable
+                  data-column={col} data-row={row}>
+                  {engine.getValue(toCellReference(row, col))}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+```
 
 ---
 

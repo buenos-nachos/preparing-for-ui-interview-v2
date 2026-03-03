@@ -1,47 +1,102 @@
 # Star Rating Component
 
-**Difficulty**: `easy`
+**Difficulty**: 🟢 Easy · **Time**: 10–15 min
+
+## What You'll Learn
+
+- Controlled component pattern (value + onChange)
+- Event delegation on a group of buttons
+- ARIA `radiogroup` / `radio` roles for accessibility
 
 ## Goal
 
-Build a star rating component that allows users to provide feedback by selecting a rating from 1 to 5 stars. It should support both read-only display and interactive selection modes.
+Build a star rating widget that lets users select a rating from 1 to 5 stars. It should support both **interactive** (clickable) and **read-only** display modes.
+
+```
+Interactive mode (value = 3):
+  ★ ★ ★ ☆ ☆       ← click star 4 → onChange(4)
+
+Read-only mode (value = 4):
+  ★ ★ ★ ★ ☆       ← clicks disabled
+```
 
 ## Requirements
 
 ### Core Functionality
 
-1. Render 5 stars by default (configurable count is a plus).
-2. Support **controlled** and **uncontrolled** modes.
-3. **Interactive Mode**: Hovering over a star should visually highlight it and all preceding stars. Clicking a star should update the selected value.
-4. **Read-only Mode**: Display the current rating without hover effects or interactivity.
-5. **Visuals**: Filled stars should be visually distinct (e.g., gold/yellow). Empty stars should be outlined or gray.
+1. Render 5 star buttons (emoji ⭐️).
+2. **Controlled mode**: accept `value` and `onChange` props.
+3. **Interactive mode**: clicking a star calls `onChange(starValue)`.
+4. **Read-only mode**: when `readonly` is true, clicks are disabled.
+5. Stars up to and including the selected value should appear "active" (highlighted).
 
 ### Accessibility (A11y)
 
-1. The component should behave like a radio group (`role="radiogroup"`).
-2. Each star should act as a radio button (`role="radio"`).
-3. Support keyboard navigation: `Tab` to focus, `Arrow Keys` to change selection, `Enter` or `Space` to select.
+1. Use `role="radiogroup"` on the container with an `aria-label`.
+2. Each star should be a `<button>` with `role="radio"` and `aria-checked`.
+3. Include a hidden `<input type="number">` to hold the current value for form submission.
+4. Set `aria-readonly` when in read-only mode.
 
 ## API Design
 
-The component should accept the following props:
+```ts
+type TStarRatingProps = {
+  value: number              // current rating (1–5)
+  onChange: (value: number) => void
+  readonly?: boolean         // disable interaction
+}
+```
 
-- `maxStars`: `number` (default: 5) - Total number of stars to render.
-- `value`: `number` (optional) - Current rating value (controlled mode).
-- `defaultValue`: `number` (optional) - Initial rating value (uncontrolled mode).
-- `onChange`: `(value: number) => void` - Callback when rating changes.
-- `readOnly`: `boolean` (default: false) - If true, prevents interaction.
+## Walkthrough
 
-## Solution Approach
+### Step 1 — Render stars
 
-1. **State Management**: Use internal state for **hover value** and **selection value**. If `value` prop is provided, use it (controlled); otherwise, use internal state.
-2. **Rendering**: Loop from 1 to `maxStars`. Determine if a star is "active" based on `hoverValue` (if hovering) or `value` (if not hovering).
-3. **Events**: Use `onMouseEnter` to update hover state, `onMouseLeave` to reset it, and `onClick` to trigger `onChange` and update selection.
+Create an array of 5 items. Map each to a `<button>` with the star emoji. Store the star's numeric value in a `data-star-value` attribute.
 
-## Test Cases
+### Step 2 — Handle clicks with event delegation
 
-1. Renders correct number of stars based on `maxStars`.
-2. Clicking the 3rd star updates value to 3.
-3. Hovering over 4th star highlights 1-4.
-4. `readOnly={true}` prevents hover effects and clicks.
-5. Keyboard navigation updates rating.
+Instead of attaching `onClick` to each button, attach a single handler to the parent container. Use `event.target.closest('button')` to find the clicked star and read its `data-star-value`.
+
+```
+Container (onClick) ─────────────────────┐
+│  ⭐️ btn[data-star-value=1]             │
+│  ⭐️ btn[data-star-value=2]  ← click!  │
+│  ⭐️ btn[data-star-value=3]             │
+│  ⭐️ btn[data-star-value=4]             │
+│  ⭐️ btn[data-star-value=5]             │
+└─────────────────────────────────────────┘
+         │
+         ▼
+  closest('button') → data-star-value = 2
+  onChange(2)
+```
+
+### Step 3 — Visual feedback
+
+Use a `data-active` attribute (or CSS class) on each star. A star is active when `value >= starValue`. Style active vs inactive stars differently via CSS.
+
+<details>
+<summary>💡 Hint — Why event delegation?</summary>
+
+With 5 buttons, individual handlers work fine. But event delegation is a pattern interviewers love because:
+- It scales to any number of stars
+- It's a single handler (less memory)
+- It demonstrates understanding of event bubbling
+</details>
+
+## Edge Cases
+
+| Scenario | Expected |
+|---|---|
+| `value = 0` | No stars highlighted |
+| `value = 5` | All stars highlighted |
+| Click same star twice | `onChange` fires with same value (consumer decides behavior) |
+| `readonly = true` | Clicks do nothing, buttons are disabled |
+| Missing `onChange` | Should not crash |
+
+## Verification
+
+1. Click star 3 → first 3 stars light up, `onChange(3)` fires.
+2. Set `readonly` → clicking does nothing.
+3. Tab through stars with keyboard → focus moves between buttons.
+4. Screen reader announces "3 Stars, radio, checked" for the selected star.

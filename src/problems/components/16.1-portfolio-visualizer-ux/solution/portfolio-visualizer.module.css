@@ -1,0 +1,14 @@
+.details > summary {
+  list-style: none;
+}
+
+.container {
+  background-color: rgb(244, 244, 244);
+  border: 4px solid black;
+  border-radius: 0.5rem;
+}
+
+.output {
+  text-align: left;
+  width: 5rem;
+}

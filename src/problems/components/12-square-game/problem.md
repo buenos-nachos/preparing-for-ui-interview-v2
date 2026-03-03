@@ -1,55 +1,145 @@
 # Square Game (8-Puzzle)
 
-**Difficulty**: `medium`
+**Difficulty**: 🔴 Hard · **Time**: 25–30 min
+
+## What You'll Learn
+
+- 2D grid state management
+- Move validation with adjacency checks
+- Win condition detection
+- Array manipulation (shuffle, chunk, swap)
 
 ## Goal
 
-Create a 3x3 grid game (also known as the 8-puzzle) containing tiles numbered 1 through 8 and one empty space. The objective is to rearrange the tiles from a random configuration into sequential order (1-8), leaving the last cell empty.
+Build the classic sliding puzzle (8-puzzle). A grid of numbered tiles has one empty space. Click a tile adjacent to the empty space to slide it. Arrange all tiles in order to win.
+
+```
+Start (shuffled):          Goal (solved):
+┌────┬────┬────┐          ┌────┬────┬────┐
+│  3 │  1 │  6 │          │  1 │  2 │  3 │
+├────┼────┼────┤          ├────┼────┼────┤
+│  5 │  2 │  8 │          │  4 │  5 │  6 │
+├────┼────┼────┤          ├────┼────┼────┤
+│  4 │  7 │    │ ← empty  │  7 │  8 │    │
+└────┴────┴────┘          └────┴────┴────┘
+```
 
 ## Requirements
 
 ### Core Functionality
 
-1.  **Rendering**:
-    - Display a 3x3 grid.
-    - Render tiles numbered 1 to 8.
-    - Render one empty cell.
-    - Initial state should be randomized.
-2.  **Interactivity**:
-    - Users can click on a tile adjacent to the empty space (horizontally or vertically) to move it into the empty space.
-    - If a user clicks a tile not adjacent to the empty space, nothing should happen.
-3.  **Win Condition**:
-    - Detect when the tiles are ordered 1-8 in the first 8 positions, with the empty space at the end (index 8).
-    - Display a "Win" message or status when this condition is met.
+1. **Generate board**: Create a shuffled `size × size` grid with numbers `1..n-1` and one `null` (empty).
+2. **Move validation**: A tile can only move if it's **adjacent** (horizontally or vertically) to the empty space. No diagonal moves.
+3. **Swap**: Click a valid tile → swap it with the empty space.
+4. **Win detection**: Check if tiles are in order `[1, 2, 3, ..., null]`.
+5. **New game**: Button to reshuffle and restart.
 
-### Accessibility (A11y)
+### Move Validation Logic
 
-1.  Ensure the grid and tiles are keyboard accessible (optional but recommended).
-2.  Use standard semantic HTML (buttons or interactive divs with ARIA roles) if possible.
-3.  Ensure sufficient color contrast for numbers.
+```
+Given clicked tile at (row, col) and empty at (emptyRow, emptyCol):
 
-## API Design
+Valid move = same row, adjacent column  OR  same column, adjacent row
 
-The component (React or Vanilla) generally takes configuration for the root element (Vanilla) or standard props (React), though this specific implementation is self-contained.
+  validHorizontally = (row === emptyRow) && |col - emptyCol| === 1
+  validVertically   = (col === emptyCol) && |row - emptyRow| === 1
+```
 
-## Solution Approach
+```
+  ┌───┬───┬───┐
+  │   │ ✓ │   │     ✓ = valid moves from empty
+  ├───┼───┼───┤     ✗ = invalid (diagonal)
+  │ ✓ │   │ ✓ │
+  ├───┼───┼───┤
+  │   │ ✓ │   │
+  └───┴───┴───┘
+```
 
-1.  **State Representation**:
-    - Use a 1D array of size 9 or a 2D array of 3x3.
-    - Values: `1`, `2`, `3`, ..., `8`, `null` (for empty).
-2.  **Initialization**:
-    - Generate a solved state.
-    - Shuffle the array.
-3.  **Move Logic**:
-    - On click, find the coordinates of the clicked tile `(r, c)` and the empty tile `(emptyR, emptyC)`.
-    - Check if `|r - emptyR| + |c - emptyC| === 1`.
-    - If yes, swap values in state and re-render.
-4.  **Win Logic**:
-    - Flatten the grid and compare against `[1, 2, 3, 4, 5, 6, 7, 8, null]`.
+### Win Condition
 
-## Test Cases
+```ts
+function isWin(grid: (number | null)[][]): boolean {
+  const flat = grid.flat()
+  return flat.every((val, i) =>
+    i === flat.length - 1 ? val === null : val === i + 1
+  )
+}
+```
 
-1.  **Initial Render**: Grid displays 3x3 tiles.
-2.  **Valid Move**: Click a tile next to empty -> they swap.
-3.  **Invalid Move**: Click a tile not next to empty -> no change.
-4.  **Win State**: (Can be tested by mocking state) -> "Win" message appears.
+## Utility Functions
+
+```ts
+// Shuffle an array randomly
+function randomizeArray(arr) { return arr.sort(() => Math.random() - 0.5) }
+
+// Split 1D array into 2D grid
+function chunkify(arr, n) {
+  return Array.from(Array(n), (_, i) => arr.slice(i * n, (i + 1) * n))
+}
+
+// Generate initial game state
+function getGameState(size) {
+  const arr = randomizeArray([1, 2, ..., size*size-1, null])
+  return chunkify(arr, size)
+}
+
+// Find the empty cell
+function getEmptyPosition(grid): [row, col]
+```
+
+## Walkthrough
+
+### Step 1 — Initialize the board
+
+Call `getGameState(3)` to create a shuffled 3×3 grid. Store it in state.
+
+### Step 2 — Render the grid
+
+Map over the 2D array. Each cell is a button (or div). The `null` cell is styled as empty. Use CSS Grid for layout.
+
+### Step 3 — Handle clicks
+
+On click:
+1. Find the empty position
+2. Validate the move (is clicked tile adjacent to empty?)
+3. If valid, swap the tile with the empty space
+4. Check win condition
+
+### Step 4 — Win state
+
+After each move, call `isWin(grid)`. If won, show a congratulations message or disable further moves.
+
+<details>
+<summary>💡 Hint — Immutable 2D array update</summary>
+
+To swap two cells immutably:
+```ts
+const newGrid = grid.map(row => [...row])
+newGrid[emptyRow][emptyCol] = newGrid[clickRow][clickCol]
+newGrid[clickRow][clickCol] = null
+```
+</details>
+
+<details>
+<summary>💡 Hint — Not all shuffles are solvable</summary>
+
+In the real 8-puzzle, only half of all permutations are solvable. For this interview problem, we skip solvability checks and just shuffle randomly. If you want to be thorough, you can check the inversion count.
+</details>
+
+## Edge Cases
+
+| Scenario | Expected |
+|---|---|
+| Click the empty space | Nothing happens |
+| Click a non-adjacent tile | Nothing happens |
+| Click a diagonal tile | Nothing happens (not adjacent) |
+| Board is already solved | Win detected immediately |
+| 4×4 grid (15-puzzle) | Same logic, just larger |
+
+## Verification
+
+1. Board renders with shuffled numbers and one empty space.
+2. Click adjacent tile → it slides into the empty space.
+3. Click non-adjacent tile → nothing happens.
+4. Arrange all tiles in order → win message appears.
+5. Click "New Game" → board reshuffles.

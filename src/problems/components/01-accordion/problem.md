@@ -1,36 +1,105 @@
 # Accordion
 
-**Difficulty**: `easy`
+**Difficulty**: 🟢 Easy · **Time**: 10–15 min
+
+## What You'll Learn
+
+- Semantic HTML with `<details>` / `<summary>`
+- CSS transitions on collapsible content
+- Accessibility for free with native elements
 
 ## Goal
 
-Build an accordion component that displays a list of expandable/collapsible items. Each item consists of a title (summary) and content details. The component should allow users to toggle the visibility of the content for each item independently.
+Build an accordion component that displays a list of expandable/collapsible items. Each item has a **title** (summary) and **content** (details). Users can toggle each section independently.
 
-## Concepts Used
-
-- Semantic HTML
+```
+┌──────────────────────────────────┐
+│ ▶ What is React?                 │  ← collapsed
+├──────────────────────────────────┤
+│ ▼ Why use TypeScript?            │  ← expanded
+│                                  │
+│   TypeScript adds static types   │
+│   to JavaScript, catching bugs   │
+│   at compile time …              │
+│                                  │
+├──────────────────────────────────┤
+│ ▶ What is Bun?                   │  ← collapsed
+└──────────────────────────────────┘
+```
 
 ## Requirements
 
 ### Core Functionality
 
-1.  Render a list of accordion items based on the provided configuration.
-2.  Each item should display a title that can be clicked to toggle the visibility of its content.
-3.  Allow independent control of each section (multiple sections can be open at once).
+1. Render a list of accordion items from the provided configuration.
+2. Each item displays a **title** that can be clicked to toggle its content.
+3. Multiple sections can be open at the same time (independent control).
 
 ### Accessibility (A11y)
 
-1.  Ensure native accessibility and keyboard support.
-2.  Ensure content is hidden/shown appropriately for screen readers.
+1. Use native `<details>` / `<summary>` elements — this gives you keyboard support and screen-reader semantics **for free**.
+2. Content must be properly hidden/shown for assistive technologies.
 
 ## API Design
 
-The component should accept the following props:
+```ts
+type TAccordionItem = {
+  id: string      // unique identifier
+  title: string   // text shown in the header
+  content: string // text shown when expanded
+}
 
-- `items`: `TAccordionItem[]` - An array of items to render.
+// Props
+{ items: TAccordionItem[] }
+```
 
-**TAccordionItem Structure:**
+## Walkthrough
 
-- `id`: `string` - Unique identifier for the item.
-- `title`: `string` - The text to display in the summary/header.
-- `content`: `string` - The text content to display when expanded.
+### Step 1 — Render the list
+
+Map over `items` and render a `<details>` element for each. Inside, place a `<summary>` for the title and a `<p>` (or `<div>`) for the content.
+
+```
+items.map(item =>
+  <details>
+    <summary>{item.title}</summary>
+    <p>{item.content}</p>
+  </details>
+)
+```
+
+### Step 2 — Style it
+
+- Add padding and borders to make each section visually distinct.
+- Use CSS to style the open/closed indicator (the default triangle marker).
+
+### Step 3 — Animate (bonus)
+
+Use the `::details-content` pseudo-element (modern browsers) or a height transition trick to animate the expand/collapse.
+
+<details>
+<summary>💡 Hint — Why <code>&lt;details&gt;</code> over manual state?</summary>
+
+The `<details>` element manages its own open/closed state natively. You don't need `useState` at all! The browser handles:
+- Toggle on click
+- Toggle on Enter/Space key
+- Proper ARIA roles (`group` / `button`)
+
+This makes the implementation **zero-JS** in its simplest form.
+</details>
+
+## Edge Cases
+
+| Scenario | Expected |
+|---|---|
+| Empty `items` array | Render nothing (no crash) |
+| Very long content | Content scrolls or wraps naturally |
+| Rapid clicking | Each toggle is independent, no race conditions |
+| Duplicate IDs | Still renders, but use unique keys |
+
+## Verification
+
+1. Click a title → content expands.
+2. Click the same title again → content collapses.
+3. Open multiple sections simultaneously → all stay open.
+4. Tab to a section and press Enter/Space → toggles correctly.
