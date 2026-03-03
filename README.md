@@ -152,10 +152,12 @@ Reusable UI components and widgets implemented in React.
 | 18   | **Markdown Editor**      | 🚀 Extreme | Text Processing, Regex, Syntax Highlighting     | [Solution](./src/problems/components/18-markdown)                     |
 | 19   | **GPT Chat Interface**   | 🚀 Extreme | Streaming Responses, Auto-scroll                | [Solution](./src/problems/components/19-gpt-chat)                     |
 | 20   | **Infinite Canvas**      | 🚀 Extreme | Canvas API, 2D Transform Matrix, Virtualization | [Solution](./src/problems/components/20-infinite-canvas)              |
-| 21.1 | **Google Sheet Parser**  | 🚀 Extreme | Tokenizer, Shunting-Yard, RPN                   | [Solution](./src/problems/components/21.1-google-sheet-parser)        |
-| 21.2 | **Google Sheet Topo**    | 🚀 Extreme | Topological Sort, Cycle Detection               | [Solution](./src/problems/components/21.2-google-sheet-topo)          |
-| 21.3 | **Google Sheet Engine**  | 🚀 Extreme | Formula Evaluation, Dependency Graph            | [Solution](./src/problems/components/21.3-google-sheet-engine)        |
-| 21.4 | **Google Sheet UX**      | 🚀 Extreme | Virtual Grid, Cell Editing, Formatting          | [Solution](./src/problems/components/21.4-google-sheet-ux)            |
+| 19.1 | **GS: Basic**            | 🟡 Medium  | Map, Setup, Getters                             | [Solution](./src/problems/components/19.1-google-sheet-basic)         |
+| 19.2 | **GS: Compile**          | 🟡 Medium  | Tokenizer, RPN, AST Compile                     | [Solution](./src/problems/components/19.2-google-sheet-compile)       |
+| 19.3 | **GS: Topo Sort**        | 🔴 Hard    | Topological Sort, Cycle Detection               | [Solution](./src/problems/components/19.3-google-sheet-topo)          |
+| 19.4 | **GS: Eval**             | 🔴 Hard    | RPN Evaluation, basic formula                   | [Solution](./src/problems/components/19.4-google-sheet-eval)          |
+| 19.5 | **GS: Recompute**        | 🚀 Extreme | Graph Dependency, Full Engine                   | [Solution](./src/problems/components/19.5-google-sheet-recompute)     |
+| 19.6 | **GS: UX**               | 🚀 Extreme | Virtual Grid, Cell Editing, Formatting          | [Solution](./src/problems/components/19.6-google-sheet-ux)            |
 
 ### 3. TypeScript Challenges
 
