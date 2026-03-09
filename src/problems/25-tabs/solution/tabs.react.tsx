@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom'
 
 type TTabProps = PropsWithChildren<{
   name: string
+  isActive?: boolean
 }>
 
 type TTabsProps = {
@@ -14,10 +15,18 @@ type TTabsProps = {
   children: ReactElement<TTabProps, typeof Tab>[]
 }
 
-export function Tab({ name }: TTabProps) {
+export function Tab({ name, isActive }: TTabProps) {
   return (
-    <li>
-      <button data-tab-name={name}>{name}</button>
+    <li role="presentation">
+      <button
+        role="tab"
+        id={`tab-${name}`}
+        data-tab-name={name}
+        aria-selected={isActive}
+        aria-controls="tab-panel"
+      >
+        {name}
+      </button>
     </li>
   )
 }
@@ -36,14 +45,19 @@ export function Tabs({ defaultTab, children, target }: TTabsProps) {
   return (
     <div>
       <nav>
-        <ul onClickCapture={handleTabClick} className={cx(flex.flexRowStart, flex.flexGap16)}>
-          {children}
+        <ul role="tablist" onClickCapture={handleTabClick} className={cx(flex.flexRowStart, flex.flexGap16)}>
+          {children.map((child) =>
+            React.cloneElement(child, { isActive: child.props.name === activeTab })
+          )}
         </ul>
       </nav>
       {content && target?.current != null ? (
-        createPortal(content, target.current)
+        createPortal(
+          <div role="tabpanel" id="tab-panel" aria-labelledby={`tab-${activeTab}`}>{content}</div>,
+          target.current
+        )
       ) : (
-        <section className={tabs.container}>{content}</section>
+        <section role="tabpanel" id="tab-panel" aria-labelledby={`tab-${activeTab}`} className={tabs.container}>{content}</section>
       )}
     </div>
   )

@@ -30,11 +30,11 @@ export class Tabs extends AbstractComponent<TTabsProps> {
   toHTML(): string {
     const { className, target } = this.config
     const classes = cx(...(className ?? []))
-    const contentHtml = target ? '' : `<section class="${css.container}"></section>`
+    const contentHtml = target ? '' : `<section role="tabpanel" id="tab-panel" aria-labelledby="tab-${this.#defaultTab}" class="${css.container}"></section>`
 
     return `
             <nav class="${classes}">
-                <ul class="${cx(flex.flexRowStart, flex.flexGap16)}">
+                <ul role="tablist" class="${cx(flex.flexRowStart, flex.flexGap16)}">
                     ${this.#getTabs()}
                 </ul>
             </nav>
@@ -65,6 +65,13 @@ export class Tabs extends AbstractComponent<TTabsProps> {
     const tab = this.config.tabs.find((t) => t.name === tabName)
     if (!tab) return
 
+    // Update aria-selected on all tab buttons
+    const buttons = this.container?.querySelectorAll('[role="tab"]')
+    buttons?.forEach((btn) => {
+      const isActive = (btn as HTMLElement).dataset.tabName === tabName
+      btn.setAttribute('aria-selected', String(isActive))
+    })
+
     this.#activeTabName = tabName
     const { content } = tab
 
@@ -72,13 +79,14 @@ export class Tabs extends AbstractComponent<TTabsProps> {
     const container = this.config.target || this.#contentContainer
     if (container) {
       container.innerHTML = content
+      container.setAttribute('aria-labelledby', `tab-${tabName}`)
     }
   }
 
   #getTabs(): string {
     const { tabs } = this.config
     return tabs
-      .map((tab) => `<li><button data-tab-name="${tab.name}">${tab.name}</button></li>`)
+      .map((tab) => `<li role="presentation"><button role="tab" id="tab-${tab.name}" data-tab-name="${tab.name}" aria-controls="tab-panel" aria-selected="false">${tab.name}</button></li>`)
       .join('')
   }
 }

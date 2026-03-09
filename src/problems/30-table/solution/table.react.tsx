@@ -1,11 +1,4 @@
-import React, {
-  useCallback,
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useState,
-  type ChangeEventHandler,
-} from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import styles from './table.module.css'
 import flex from '@course/styles'
 import cx from '@course/cx'
@@ -29,14 +22,15 @@ type TTableProps<T extends { id: string }> = {
   comparator?: (columnId: keyof T, direction: 'asc' | 'desc') => (a: T, b: T) => number
 }
 
+const nextDir = { none: 'asc', asc: 'desc', desc: 'none' } as const
+
 export function Table<T extends { id: string }>({
   search,
   columns,
   datasource,
   comparator,
 }: TTableProps<T>) {
-  const [_query, setQuery] = useState('')
-  const query = useDeferredValue(_query)
+  const [query, setQuery] = useState('')
   const [data, setData] = useState<T[]>([])
   const [currentPage, setCurrentPage] = useState(0)
   const [sort, setSort] = useState<{
@@ -45,31 +39,24 @@ export function Table<T extends { id: string }>({
   } | null>(null)
 
   useEffect(() => {
-    if (data.length === 0) {
-      datasource.next(0, datasource.pageSize).then((d) => setData(d))
-    }
+    setData([])
+    setCurrentPage(0)
+    datasource.next(0, datasource.pageSize).then(setData)
   }, [datasource])
 
-  const next = useCallback(() => {
+  const next = () => {
     if (currentPage >= datasource.pages - 1) return
-
     const nextPage = currentPage + 1
     setCurrentPage(nextPage)
-
-    if (
-      data.length <= nextPage * datasource.pageSize &&
-      data.length < datasource.pages * datasource.pageSize
-    ) {
+    if (data.length <= nextPage * datasource.pageSize) {
       datasource.next(nextPage, datasource.pageSize).then((d) => setData((prev) => [...prev, ...d]))
     }
-  }, [datasource, currentPage, data.length])
+  }
 
-  const prev = useCallback(() => {
-    setCurrentPage((p) => Math.max(p - 1, 0))
-  }, [])
+  const prev = () => setCurrentPage((p) => Math.max(p - 1, 0))
 
-  const onSearch: ChangeEventHandler<HTMLInputElement> = ({ target }) => {
-    setQuery(target.value)
+  const onSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setQuery(e.target.value)
     setCurrentPage(0)
   }
 
@@ -78,35 +65,23 @@ export function Table<T extends { id: string }>({
     const columnId = target.dataset.columnId as keyof T
     const column = columns.find((c) => c.id === columnId)
     if (!column) return
-    setSort((prevSort) => {
-      const currentDirection =
-        prevSort?.columnId === columnId ? prevSort.direction : (column.sort ?? 'none')
-      const newDirection =
-        currentDirection === 'desc' ? 'none' : currentDirection === 'asc' ? 'desc' : 'asc'
-      return { columnId, direction: newDirection }
+    setSort((prev) => {
+      const dir = prev?.columnId === columnId ? prev.direction : (column.sort ?? 'none')
+      return { columnId, direction: nextDir[dir] }
     })
   }
 
   const slice = useMemo(() => {
-    const filterFn = (d: T[]) => {
-      if (!query) return d
-      return search ? search(query, d) : d.filter((item) => item.id.includes(query))
-    }
-
-    const sortFn = (d: T[]) => {
-      const sortedColumn = columns.find((c) => c.id === sort?.columnId)
-      if (!sortedColumn || !sort || !comparator || sort.direction === 'none') return d
-      return [...d].sort(comparator(sortedColumn.id as keyof T, sort.direction))
-    }
-
-    const sliceFn = (d: T[]) => {
-      const start = currentPage * datasource.pageSize
-      const end = (currentPage + 1) * datasource.pageSize
-      return d.slice(start, end)
-    }
-
-    return [filterFn, sortFn, sliceFn].reduce((acc, fn) => fn(acc), data)
-  }, [data, query, search, columns, sort, comparator, currentPage, datasource])
+    const filtered = query
+      ? (search ? search(query, data) : data.filter((item) => item.id.includes(query)))
+      : data
+    const sorted =
+      sort && comparator && sort.direction !== 'none'
+        ? [...filtered].sort(comparator(sort.columnId as keyof T, sort.direction))
+        : filtered
+    const start = currentPage * datasource.pageSize
+    return sorted.slice(start, start + datasource.pageSize)
+  }, [data, query, search, sort, comparator, currentPage, datasource])
 
   return (
     <div className={cx(flex.w100, flex.flexColumnStart)}>

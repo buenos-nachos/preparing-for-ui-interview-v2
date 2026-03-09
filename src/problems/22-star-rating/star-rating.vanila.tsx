@@ -43,6 +43,7 @@ export class StarRating extends AbstractComponent<TStarRatingProps> {
   value: number = 0;
 
   constructor(props: TComponentConfig<TStarRatingProps>) {
+    super(props)
     // TODO: call super with config and listeners
     // TODO: init value from props
   }
