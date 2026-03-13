@@ -2,7 +2,6 @@ import { useState } from 'react'
 import flex from '@course/styles'
 import cx from '@course/cx'
 import styles from './square-game.module.css'
-import { getEmptyPosition, getGameState, isWin, validate } from './solution/square-game.utility'
 
 const GAME_SIZE = 3
 
