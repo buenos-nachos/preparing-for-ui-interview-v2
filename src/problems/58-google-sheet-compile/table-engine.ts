@@ -1,29 +1,27 @@
 // bun test src/problems/58-google-sheet-compile/test/table-engine.test.ts
 
-import {
-  tokenize as _tokenize,
-  toRpn as _toRpn,
-  type CellId,
-  type Compiled,
-} from '../../utilities/google-sheet-parser'
+import { tokenize, toRpn, type CellId, type Compiled } from '../../utilities/google-sheet-parser'
 
 export type { CellId } from '../../utilities/google-sheet-parser'
 
 export class TableEngine {
+  /* Raw user input for each cell (e.g. "=A1+B1" or "42") */
   #raw: Map<CellId, string> = new Map()
-  #value: Map<CellId, string> = new Map()
+  /* Computed display value for each cell (in this version, same as raw) */
+  #val: Map<CellId, string> = new Map()
+  /* Forward dependencies: cell → set of cells it depends on */
   #deps: Map<CellId, Set<CellId>> = new Map()
-  #rev: Map<CellId, Set<CellId>> = new Map()
+  /* Reverse dependencies: cell → set of cells that depend on it */
+  #reverseDeps: Map<CellId, Set<CellId>> = new Map()
+  /* Compiled formula AST for each cell */
   #compiled: Map<CellId, Compiled> = new Map()
 
   setRaw(id: CellId, raw: string): { changed: CellId[] } {
     this.#raw.set(id, raw)
-    this.#value.set(id, raw) // Set value as raw text for now (no evaluation yet)
+    this.#val.set(id, raw) // Set value as raw text for now (no evaluation yet)
 
-    // TODO: Step 4 - Tie it together
-    // const deps = this.#compile(id, raw)
-    // this.#setDeps(id, deps)
-
+    // Step 4 - Tie it together
+    // Call #compile to get deps, then call setDeps to update the graph.
     // Return { changed: [id] }
     throw new Error('TODO: compile and track dependencies')
   }
@@ -33,18 +31,11 @@ export class TableEngine {
   }
 
   getValue(id: CellId): string {
-    return this.#value.get(id) ?? ''
+    return this.#val.get(id) ?? ''
   }
 
-  getDeps(id: CellId): ReadonlySet<CellId> {
-    return this.#getDeps(id)
-  }
-
-  getRevDeps(id: CellId): ReadonlySet<CellId> {
-    return this.#getRevDeps(id)
-  }
-
-  #getDeps(id: CellId): Set<CellId> {
+  /* Returns the set of cells that the given cell depends on. Lazily initializes. */
+  getDeps(id: CellId): Set<CellId> {
     let s = this.#deps.get(id)
     if (!s) {
       s = new Set<CellId>()
@@ -53,41 +44,38 @@ export class TableEngine {
     return s
   }
 
-  #getRevDeps(id: CellId): Set<CellId> {
-    let s = this.#rev.get(id)
+  /* Returns the set of cells that depend on the given cell. Lazily initializes. */
+  getRevDeps(id: CellId): Set<CellId> {
+    let s = this.#reverseDeps.get(id)
     if (!s) {
       s = new Set<CellId>()
-      this.#rev.set(id, s)
+      this.#reverseDeps.set(id, s)
     }
     return s
   }
 
-  // @ts-ignore
-  #setDeps(_id: CellId, _nextDeps: Set<CellId>) {
-    // TODO: Step 3 - Dependency Diffing
-    // 1. Grab `prevDeps` from state
-    // 2. For every old dependency no longer present in the new set, *delete* `id` from that dependency's #revDeps
-    // 3. For every new dependency not present in the old set, *add* `id` to that dependency's #revDeps
-    // 4. Forcefully update the #deps map with your new `nextDeps`!
+  /* Step 3 - Dependency Diffing
+   * Updates forward and reverse dependency maps when a cell's deps change.
+   * 1. Grab prevDeps from getDeps(id)
+   * 2. For every old dep no longer in nextDeps, delete id from that dep's revDeps
+   * 3. For every new dep not in prevDeps, add id to that dep's revDeps
+   * 4. Update #deps map with nextDeps
+   */
+  setDeps(id: CellId, nextDeps: Set<CellId>) {
     throw new Error('TODO: Update dependency and reverse dependency maps')
   }
 
-  // @ts-ignore
-  #compile(_id: CellId, _raw: string): Set<CellId> {
-    // TODO: Step 1 - Handle raw string
-    // Check if raw starts with `=`. If not, delete any compiled state for this id and return an empty Set.
-
-    // TODO: Step 2 - Parser Pipeline
-    // Run tokenize() and toRpn(). If either returns `ok: false`, save the `{ error: xxx }` state
-    // to the #compiled map and return an empty Set.
-
-    // TODO: Step 3 - Extract References (Graph Nodes)
-    // Iterate over the final RPN tokens. If a token is of type `ref`, add its `id` to your dependencies set!
-    // Save the successful compiled { rpn } state to your map, and return the dependencies set.
+  /* Step 1–2 - Compile
+   * Compiles a cell's raw input into RPN tokens.
+   * - Plain text (no '='): store null compiled, return empty deps.
+   * - Formula ('='): tokenize() → toRpn(). On error, store { error }, return empty deps.
+   * - On success: extract 'ref' tokens as deps, store { rpn }, return deps set.
+   */
+  #compile(id: CellId, raw: string): Set<CellId> {
     throw new Error('TODO: Use tokenize and toRpn to compile expression into RPN tokens')
   }
 
-  // Exposed for testing
+  /* Exposed for testing */
   _getCompiled(id: CellId): Compiled | undefined {
     return this.#compiled.get(id)
   }
