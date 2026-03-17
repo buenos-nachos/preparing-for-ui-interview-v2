@@ -144,19 +144,17 @@ const onAnimationEnd = ({ target }) => {
 }
 ```
 
-<details>
-<summary>💡 Hint — Why useImperativeHandle?</summary>
+### 💡 Hint — Why useImperativeHandle?
 
 The `ToastList` lives inside a portal, separate from the app tree. The provider needs a way to call `toast()` on it. `useImperativeHandle` exposes methods on a ref, bridging the gap between the context (in the app tree) and the portal (in the DOM).
 
-</details>
 
-<details>
-<summary>💡 Hint — Why onAnimationEnd instead of setTimeout for removal?</summary>
+
+### 💡 Hint — Why onAnimationEnd instead of setTimeout for removal?
 
 Using `onAnimationEnd` ensures the fade-out animation completes before the element is removed from the DOM. If you use `setTimeout`, the timing might not match the CSS animation duration, causing visual glitches.
 
-</details>
+
 
 ## Edge Cases
 

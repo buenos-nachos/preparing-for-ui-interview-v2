@@ -60,7 +60,7 @@ Input Markdown
 │  2. HEADER_RULE       (# ## ### ...)         │
 │  3. TABLE_RULE        (| ... | ... |)        │
 │  4. LIST_RULE         (- item, 1. item)      │
-│  5. PARAGRAPH_RULE    (plain text → <p>)     │
+│  5. PARAGRAPH_RULE    (plain text → `<p>`)   │
 │  6. FORMATTING_RULE   (**bold**, *italic*,    │
 │                        ~~strike~~)           │
 │                                              │
@@ -132,19 +132,17 @@ function TABLE_REPLACER(_, header, __, rows) {
 - Right pane: `<div dangerouslySetInnerHTML={{ __html: parseRichText(text, rules) }}>`
 - Use `useMemo` to avoid re-parsing on every render unless text changes
 
-<details>
-<summary>💡 Hint — Why regex order matters for headers</summary>
+### 💡 Hint — Why regex order matters for headers
 
 Process `######` (h6) before `#####` (h5) before ... `#` (h1). If you process `#` first, it would match `## Heading` as h1 (consuming the first `#`). Processing from most-specific to least-specific avoids this.
 
-</details>
 
-<details>
-<summary>💡 Hint — Avoiding double-processing</summary>
+
+### 💡 Hint — Avoiding double-processing
 
 Some rules use negative lookaheads or exclusion patterns to skip content already wrapped in HTML tags. For example, the list rule skips lines containing `<li>` or `<td>` to avoid re-processing table cells as list items.
 
-</details>
+
 
 ## Edge Cases
 

@@ -57,9 +57,9 @@ type TAccordionItem = {
 
 ### Step 1 — Render the list
 
-Map over `items` and render a `<details>` element for each. Inside, place a `<summary>` for the title and a `<p>` (or `<div>`) for the content.
+Map over `items` and render a `<details>` element for each. Inside, place a `<summary>` for the title and a `<span>` (or `<div>`) for the content.
 
-```
+```tsx
 items.map(item =>
   <details>
     <summary>{item.title}</summary>
@@ -77,8 +77,7 @@ items.map(item =>
 
 Use the `::details-content` pseudo-element (modern browsers) or a height transition trick to animate the expand/collapse.
 
-<details>
-<summary>💡 Hint — Why <code>&lt;details&gt;</code> over manual state?</summary>
+### 💡 Hint — Why `&lt;details&gt;` over manual state?
 
 The `<details>` element manages its own open/closed state natively. You don't need `useState` at all! The browser handles:
 
@@ -87,8 +86,6 @@ The `<details>` element manages its own open/closed state natively. You don't ne
 - Proper ARIA roles (`group` / `button`)
 
 This makes the implementation **zero-JS** in its simplest form.
-
-</details>
 
 ## Edge Cases
 

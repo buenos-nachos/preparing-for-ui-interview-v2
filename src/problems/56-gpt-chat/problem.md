@@ -177,26 +177,23 @@ contentRef.current?.scrollTo({
 })
 ```
 
-<details>
-<summary>💡 Hint — Why buffer chunks instead of typing directly?</summary>
+### 💡 Hint — Why buffer chunks instead of typing directly?
 
 Chunks arrive from the network at unpredictable intervals. The typewriter effect runs at a fixed speed (per animation frame). If a new chunk arrives while the previous one is still being typed, you'd lose it. The buffer (queue) ensures every chunk gets typed in order.
 
-</details>
 
-<details>
-<summary>💡 Hint — Why requestAnimationFrame instead of setTimeout?</summary>
+
+### 💡 Hint — Why requestAnimationFrame instead of setTimeout?
 
 `requestAnimationFrame` syncs with the browser's paint cycle (typically 60fps), giving the smoothest possible typing animation. `setTimeout` can drift and cause janky rendering. It also automatically pauses when the tab is hidden, saving resources.
 
-</details>
 
-<details>
-<summary>💡 Hint — AbortController cleanup</summary>
+
+### 💡 Hint — AbortController cleanup
 
 Always abort the previous stream before starting a new one (`controllerRef.current?.abort()`). Also handle `AbortError` gracefully — it's expected when the user clicks "Stop", not a real error.
 
-</details>
+
 
 ## Edge Cases
 

@@ -175,26 +175,23 @@ setRaw(id, raw):
 
 ## Hints
 
-<details>
-<summary>💡 Hint 1: Don't forget to trim</summary>
+### 💡 Hint 1: Don't forget to trim
 
 The raw string might have whitespace. Trim it before checking if it starts with `=`. Also trim after stripping the `=` prefix.
 
-</details>
 
-<details>
-<summary>💡 Hint 2: Token type check for refs</summary>
+
+### 💡 Hint 2: Token type check for refs
 
 When extracting dependencies from RPN tokens, check `token.t === 'ref'`. The cell ID is stored in `token.id`.
 
-</details>
 
-<details>
-<summary>💡 Hint 3: Reuse your lazy getters</summary>
+
+### 💡 Hint 3: Reuse your lazy getters
 
 In `#setDeps`, use your existing `#getDeps` and `#getRevDeps` private helpers (with lazy initialization) to safely access the maps without null checks.
 
-</details>
+
 
 ## Edge Cases to Consider
 

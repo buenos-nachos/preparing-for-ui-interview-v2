@@ -133,8 +133,7 @@ Result: engine.getValue("A1") → "15" ✓
 
 ## Hints
 
-<details>
-<summary>💡 Hint 1: The resolver callback</summary>
+### 💡 Hint 1: The resolver callback
 
 The resolver passed to `evalRpn` just needs to return the cell's string value. Numeric parsing is handled internally by `evalRpn`:
 
@@ -142,14 +141,13 @@ The resolver passed to `evalRpn` just needs to return the cell's string value. N
 evalRpn(rpn, (refId) => this.getValue(refId))
 ```
 
-</details>
 
-<details>
-<summary>💡 Hint 3: The underscore prefix on _evalCell</summary>
+
+### 💡 Hint 3: The underscore prefix on _evalCell
 
 `_evalCell` uses a single underscore (not `#`) because it needs to be accessible from tests. It's a convention meaning "internal but not truly private".
 
-</details>
+
 
 ## Edge Cases to Consider
 

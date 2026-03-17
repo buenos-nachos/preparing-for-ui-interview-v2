@@ -103,19 +103,17 @@ const handleClick = ({ target }) => {
 
 Show the current expression string in a display area. Format the result with `toFixed(5)` and strip trailing zeros.
 
-<details>
-<summary>💡 Hint — Why a Map for buttons?</summary>
+### 💡 Hint — Why a Map for buttons?
 
 The Map serves as both the **data model** (what buttons exist and what they do) and the **rendering source** (iterate to create the grid). This separates logic from presentation — the same map works for React and Vanilla implementations.
 
-</details>
 
-<details>
-<summary>💡 Hint — Security of eval/new Function</summary>
+
+### 💡 Hint — Security of eval/new Function
 
 In a real app, `eval` is dangerous. Here it's safe because we validate the input with a regex (`/[0-9.()+/%*-]/`) before evaluating. In production, you'd use a proper expression parser (like the one in the Google Sheets problem!).
 
-</details>
+
 
 ## Edge Cases
 

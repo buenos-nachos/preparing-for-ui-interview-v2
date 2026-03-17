@@ -110,8 +110,7 @@ useEffect(() => {
 }, [currentIndex])
 ```
 
-<details>
-<summary>💡 Hint — Image preloading</summary>
+### 💡 Hint — Image preloading
 
 To preload the next/previous images for smoother navigation:
 
@@ -125,7 +124,7 @@ useEffect(() => {
 }, [currentIndex])
 ```
 
-</details>
+
 
 ## Edge Cases
 

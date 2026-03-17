@@ -75,15 +75,14 @@ Container (onClick) ────────────────────
 
 Use a `data-active` attribute (or CSS class) on each star. A star is active when `value >= starValue`. Style active vs inactive stars differently via CSS.
 
-<details>
-<summary>💡 Hint — Why event delegation?</summary>
+### 💡 Hint — Why event delegation?
 
 With 5 buttons, individual handlers work fine. But event delegation is a pattern interviewers love because:
 
 - It scales to any number of stars
 - It's a single handler (less memory)
 - It demonstrates understanding of event bubbling
-</details>
+
 
 ## Edge Cases
 

@@ -112,19 +112,17 @@ const slice = useMemo(() => {
 }, [data, query, sort, currentPage, ...])
 ```
 
-<details>
-<summary>💡 Hint — Why accumulate data instead of replacing?</summary>
+### 💡 Hint — Why accumulate data instead of replacing?
 
 When the user goes to page 2, you fetch page 2 data and **append** it to the existing array. This way, going back to page 1 doesn't require another fetch. The `sliceFn` handles showing only the current page's portion.
 
-</details>
 
-<details>
-<summary>💡 Hint — Generic components in React</summary>
+
+### 💡 Hint — Generic components in React
 
 `Table<T>` uses TypeScript generics so the same component works with any data shape. The `columns` prop defines how to render each field, and the `comparator` prop defines how to sort. The constraint `T extends { id: string }` ensures every row has a unique key.
 
-</details>
+
 
 ## Edge Cases
 

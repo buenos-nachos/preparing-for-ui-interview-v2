@@ -186,8 +186,7 @@ setRaw(id, raw):
 
 ## Hints
 
-<details>
-<summary>💡 Hint 1: BFS with an array</summary>
+### 💡 Hint 1: BFS with an array
 
 You don't need a fancy queue data structure. A simple array with an index pointer works fine for BFS at this scale:
 
@@ -200,21 +199,19 @@ while (i < queue.length) {
 }
 ```
 
-</details>
 
-<details>
-<summary>💡 Hint 2: In-degree calculation</summary>
+
+### 💡 Hint 2: In-degree calculation
 
 For each cell `c` in the affected set, its in-degree is the count of cells in `deps(c)` that are ALSO in the affected set. Use a `Map<CellId, number>` to track in-degrees.
 
-</details>
 
-<details>
-<summary>💡 Hint 3: Cycle detection is just a size check</summary>
+
+### 💡 Hint 3: Cycle detection is just a size check
 
 After Kahn's algorithm finishes, if `order.length < affected.size`, the remaining cells are cyclic. You can find them by filtering `affected` for cells not in the `order` array (use a Set for O(1) lookup).
 
-</details>
+
 
 ## Edge Cases to Consider
 

@@ -106,19 +106,17 @@ Based on `uploadState.status`, show different UI:
 - **Cancel**: `uploadControls.cancel()`, clear file, reset input
 - **Upload Another**: Cancel + trigger file picker again
 
-<details>
-<summary>💡 Hint — Why keep the File in state?</summary>
+### 💡 Hint — Why keep the File in state?
 
 The `resume()` function needs the original `File` object to call `file.slice(offset)`. The hook doesn't store the file internally (it's stateless regarding the file), so the component must hold onto it.
 
-</details>
 
-<details>
-<summary>💡 Hint — Resetting the file input</summary>
+
+### 💡 Hint — Resetting the file input
 
 After cancel or "Upload Another", reset the file input by setting `fileInputRef.current.value = ''`. Otherwise, selecting the same file again won't trigger `onChange`.
 
-</details>
+
 
 ## Edge Cases
 

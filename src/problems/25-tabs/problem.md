@@ -92,12 +92,11 @@ Find the child whose `name` matches `activeTab` and render its `children`:
 - If `target?.current` exists → use `createPortal(content, target.current)`
 - Otherwise → render inline in a `<section>`
 
-<details>
-<summary>💡 Hint — Why compound components?</summary>
+### 💡 Hint — Why compound components?
 
 The `<Tabs>` + `<Tab>` pattern lets consumers declare tabs declaratively in JSX. The parent (`Tabs`) reads each child's props to build the header list and find the active content. This is the same pattern used by libraries like Radix UI and Headless UI.
 
-</details>
+
 
 ## Edge Cases
 

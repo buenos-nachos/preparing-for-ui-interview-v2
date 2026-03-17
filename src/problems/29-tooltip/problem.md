@@ -102,19 +102,17 @@ When `position === 'auto'` and the tooltip becomes visible:
 3. Get boundary rect
 4. Run the candidate check and update position state
 
-<details>
-<summary>💡 Hint — Why useEffect for auto-positioning?</summary>
+### 💡 Hint — Why useEffect for auto-positioning?
 
 You need the tooltip to be rendered in the DOM first (to measure its size with `getBoundingClientRect()`), then reposition it. This is a classic "measure after render" pattern. The tooltip briefly renders at the default position, then `useEffect` fires and moves it to the correct position.
 
-</details>
 
-<details>
-<summary>💡 Hint — CSS-only vs JS positioning</summary>
+
+### 💡 Hint — CSS-only vs JS positioning
 
 For fixed positions (top/bottom/left/right), pure CSS with `position: absolute` and transforms works great. Auto-positioning requires JS because you need to measure actual pixel dimensions and compare against the boundary.
 
-</details>
+
 
 ## Edge Cases
 

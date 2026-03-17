@@ -78,19 +78,17 @@ Use `padding-left` (e.g., 16px per level) to indent nested comments. A left bord
 }
 ```
 
-<details>
-<summary>💡 Hint — Normalization (advanced)</summary>
+### 💡 Hint — Normalization (advanced)
 
 For large trees, you can normalize the data into a flat `Map<id, comment>` with parent references. This makes lookups O(1) and simplifies state updates. However, for this problem, direct recursion on the nested structure is sufficient.
 
-</details>
 
-<details>
-<summary>💡 Hint — Event delegation for toggles</summary>
+
+### 💡 Hint — Event delegation for toggles
 
 Instead of attaching onClick to every toggle button, you can use a single handler on the container with `data-comment-id` attributes. This is especially useful in the Vanilla implementation.
 
-</details>
+
 
 ## Edge Cases
 

@@ -157,19 +157,17 @@ Returns a `ReadonlySet` of cells that depend on this cell. Use the same lazy ini
 
 ## Hints
 
-<details>
-<summary>💡 Hint 1: Why <code>ReadonlySet</code>?</summary>
+### 💡 Hint 1: Why `ReadonlySet`?
 
 We return `ReadonlySet` instead of `Set` to prevent external code from accidentally modifying the internal state. The actual stored value is still a mutable `Set` — we just expose a read-only view through the type system.
 
-</details>
 
-<details>
-<summary>💡 Hint 2: Why lazy initialization in getDeps/getRevDeps?</summary>
+
+### 💡 Hint 2: Why lazy initialization in getDeps/getRevDeps?
 
 In later steps (19.2, 19.3), we'll iterate over `deps` and `rev` sets frequently. If `getDeps("A1")` could return `undefined`, every caller would need a null check. By always returning a valid `Set` (even if empty), we simplify all downstream code.
 
-</details>
+
 
 ## Edge Cases to Consider
 

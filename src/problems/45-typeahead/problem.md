@@ -116,15 +116,13 @@ On `keydown` of the input:
 
 On select (click or Enter), set the input value to the selected item and close the dropdown.
 
-<details>
-<summary>💡 Hint — Trie vs Array.filter</summary>
+### 💡 Hint — Trie vs Array.filter
 
 For small datasets, `array.filter(item => item.startsWith(query))` works fine. But for large datasets (10k+ items), a Trie is significantly faster because it only traverses the relevant branch of the tree, not the entire array.
 
-</details>
 
-<details>
-<summary>💡 Hint — Closing the dropdown</summary>
+
+### 💡 Hint — Closing the dropdown
 
 Close the dropdown on:
 
@@ -134,7 +132,7 @@ Close the dropdown on:
 
 Be careful with `blur` — if the user clicks a dropdown item, the input blurs before the click registers. Use `onMouseDown` (fires before blur) or a timeout.
 
-</details>
+
 
 ## Edge Cases
 

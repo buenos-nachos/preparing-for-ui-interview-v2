@@ -149,19 +149,17 @@ Use event delegation on the `<ul>` container. On change:
 4. Bubble up to parents
 5. Set new state
 
-<details>
-<summary>💡 Hint — Why structuredClone?</summary>
+### 💡 Hint — Why structuredClone?
 
 React requires immutable state updates. Since the tree has circular references (parent ↔ children), you need `structuredClone` which handles circular refs. Spread operator or `JSON.parse(JSON.stringify(...))` won't work here.
 
-</details>
 
-<details>
-<summary>💡 Hint — Event delegation with onChangeCapture</summary>
+
+### 💡 Hint — Event delegation with onChangeCapture
 
 Use `onChangeCapture` on the root `<ul>` to catch all checkbox changes in a single handler. Read `target.dataset.id` to identify which checkbox changed. This avoids attaching handlers to every checkbox.
 
-</details>
+
 
 ## Edge Cases
 

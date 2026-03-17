@@ -159,33 +159,29 @@ When a cell edit triggers a cascade of changes, **don't re-render React**. Inste
 
 ## Hints
 
-<details>
-<summary>💡 Hint 1: Column letter generation</summary>
+### 💡 Hint 1: Column letter generation
 
 To convert a column index to a letter: `String.fromCharCode(65 + colIndex)` gives you `A`, `B`, `C`, etc.
 
-</details>
 
-<details>
-<summary>💡 Hint 2: Cell ID format</summary>
+
+### 💡 Hint 2: Cell ID format
 
 Cell IDs follow the pattern `"A1"`, `"B2"`, etc. — column letter + row number (1-indexed).
 
-</details>
 
-<details>
-<summary>💡 Hint 3: Virtualization with position: absolute</summary>
+
+### 💡 Hint 3: Virtualization with position: absolute
 
 Render each visible row with `position: absolute` and `top: row * ROW_HEIGHT`. The parent container should have `position: relative` and a fixed height equal to `totalRows * ROW_HEIGHT`.
 
-</details>
 
-<details>
-<summary>💡 Hint 4: contentEditable vs input</summary>
+
+### 💡 Hint 4: contentEditable vs input
 
 You can use either `<input>` elements or `contentEditable` divs for cells. `contentEditable` gives a more spreadsheet-like feel but requires more careful handling of focus and text selection.
 
-</details>
+
 
 ## Edge Cases to Consider
 

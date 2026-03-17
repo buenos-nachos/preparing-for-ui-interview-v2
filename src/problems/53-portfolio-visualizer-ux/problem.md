@@ -61,12 +61,11 @@ Create a recursive `PortfolioNode` component that receives a node's props plus a
 
 The main component simply wraps the root `PortfolioNode` in a container div, passing `data.value` as the `total`.
 
-<details>
-<summary>💡 Hint — Why defaultValue instead of value?</summary>
+### 💡 Hint — Why defaultValue instead of value?
 
 Using `defaultValue` makes the input uncontrolled — it renders the initial value but allows the user to type freely without needing an onChange handler. Problem 54 will add event delegation on the container to handle changes.
 
-</details>
+
 
 ## Edge Cases
 

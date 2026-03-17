@@ -137,19 +137,17 @@ This is where everything comes together:
 
 ## Hints
 
-<details>
-<summary>💡 Hint 1: Cycle recovery</summary>
+### 💡 Hint 1: Cycle recovery
 
 If a user later fixes a cycle (e.g., changes `A1` from `"=B1"` to `"10"`), the next `setRaw` call will recompute the graph. The previously cyclic cells will now appear in the `order` array instead of `cyclic`, and their values will be recalculated normally.
 
-</details>
 
-<details>
-<summary>💡 Hint 2: The changed array order</summary>
+
+### 💡 Hint 2: The changed array order
 
 The order of IDs in the `changed` array matters for the UI — it tells the renderer which cells to refresh. Including both `order` and `cyclic` ensures the UI updates everything that was affected.
 
-</details>
+
 
 ## Edge Cases to Consider
 

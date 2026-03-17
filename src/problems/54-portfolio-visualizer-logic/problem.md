@@ -135,19 +135,17 @@ if (node.parentID) {
 
 Container div with `onKeyDown={onNodeUpdate}`, render the root PortfolioNode passing `root.value` as `total` so the root always shows 100%.
 
-<details>
-<summary>💡 Hint — Why a flat Map instead of nested state?</summary>
+### 💡 Hint — Why a flat Map instead of nested state?
 
 With nested state, updating a deeply nested node requires cloning every ancestor. A flat Map gives O(1) access to any node by ID, and parent/sibling lookups are simple with `parentID` and `childrenIDs` references. Immutable updates are just `new Map(store).set(id, newNode)`.
 
-</details>
 
-<details>
-<summary>💡 Hint — Why no parent bubble-up?</summary>
+
+### 💡 Hint — Why no parent bubble-up?
 
 Instead of recalculating parent values when children change, parent values stay fixed and the difference is shown as "Unallocated cash". This simplifies the update logic — only the edited node changes — and the budget constraints ensure consistency.
 
-</details>
+
 
 ## Edge Cases
 

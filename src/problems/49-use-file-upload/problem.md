@@ -137,19 +137,17 @@ Resume sends: file.slice(offsetRef.current)
 
 Abort the XHR, reset `offsetRef` to 0, and set state back to `DEFAULT_STATE`.
 
-<details>
-<summary>💡 Hint — Why XMLHttpRequest instead of fetch?</summary>
+### 💡 Hint — Why XMLHttpRequest instead of fetch?
 
 `fetch()` doesn't support upload progress events. `XMLHttpRequest` provides `xhr.upload.onprogress` which gives you `loaded` and `total` bytes — essential for a progress bar. This is one of the few cases where XHR is still preferred over fetch.
 
-</details>
 
-<details>
-<summary>💡 Hint — useCallback for stable references</summary>
+
+### 💡 Hint — useCallback for stable references
 
 Wrap `start`, `pause`, `resume`, `cancel` in `useCallback` so they have stable references. This prevents unnecessary re-renders in consuming components and ensures the controls object (wrapped in `useMemo`) doesn't change on every render.
 
-</details>
+
 
 ## Edge Cases
 

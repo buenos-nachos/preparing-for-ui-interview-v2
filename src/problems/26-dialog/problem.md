@@ -101,7 +101,7 @@ useEffect:
 
 The browser fires a `close` event when the user presses Escape. Listen for it and call `onCancel` to sync your React state:
 
-```
+```tsx
 <dialog onClose={onCancel}>
 ```
 
@@ -113,12 +113,11 @@ dialog::backdrop {
 }
 ```
 
-<details>
-<summary>💡 Hint — Common pitfall: dialog won't reopen</summary>
+### 💡 Hint — Common pitfall: dialog won't reopen
 
 If you call `showModal()` on an already-open dialog, it throws an error. Always check `dialogRef.current.open` before calling `showModal()`, or ensure your `useEffect` only runs when `open` actually changes.
 
-</details>
+
 
 ## Edge Cases
 

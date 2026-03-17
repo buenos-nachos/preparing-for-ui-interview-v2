@@ -95,12 +95,11 @@ Duplicate the label with white text. Apply `clip-path: inset(0 ${100 - value}% 0
 
 The `clip-path` and `width` both transition smoothly with CSS transitions.
 
-<details>
-<summary>💡 Hint — Why two labels instead of one?</summary>
+### 💡 Hint — Why two labels instead of one?
 
 A single label can only have one color. By stacking two labels — one dark (always visible) and one white (clipped to the fill area) — you get the effect of the text changing color as the bar passes over it. This is a common technique used in real progress bars and sliders.
 
-</details>
+
 
 ## Edge Cases
 

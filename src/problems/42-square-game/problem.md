@@ -108,8 +108,7 @@ On click:
 
 After each move, call `isWin(grid)`. If won, show a congratulations message or disable further moves.
 
-<details>
-<summary>💡 Hint — Immutable 2D array update</summary>
+### 💡 Hint — Immutable 2D array update
 
 To swap two cells immutably:
 
@@ -119,14 +118,13 @@ newGrid[emptyRow][emptyCol] = newGrid[clickRow][clickCol]
 newGrid[clickRow][clickCol] = null
 ```
 
-</details>
 
-<details>
-<summary>💡 Hint — Not all shuffles are solvable</summary>
+
+### 💡 Hint — Not all shuffles are solvable
 
 In the real 8-puzzle, only half of all permutations are solvable. For this interview problem, we skip solvability checks and just shuffle randomly. If you want to be thorough, you can check the inversion count.
 
-</details>
+
 
 ## Edge Cases
 
