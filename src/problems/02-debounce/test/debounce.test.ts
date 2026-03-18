@@ -72,6 +72,38 @@ implementations.forEach(({ name, fn }) => {
         await new Promise((r) => setTimeout(r, 100))
         expect(result).toBe('c')
       })
+
+      it('should preserve apply() context', async () => {
+        let capturedValue: number | undefined
+
+        const debounced = debounce(function (this: { value: number }) {
+          capturedValue = this.value
+        }, 50)
+
+        const context = { value: 42 }
+
+        debounced.apply(context)
+        await new Promise((r) => setTimeout(r, 100))
+
+        expect(capturedValue).toBe(42)
+      })
+
+      it('should not share timer state between debounce instances', async () => {
+        const fired: string[] = []
+        const first = debounce(() => {
+          fired.push('first')
+        }, 50)
+        const second = debounce(() => {
+          fired.push('second')
+        }, 50)
+
+        first()
+        second()
+
+        await new Promise((r) => setTimeout(r, 100))
+
+        expect(fired.sort()).toEqual(['first', 'second'])
+      })
     })
   })
 })

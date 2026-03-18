@@ -77,6 +77,33 @@ implementations.forEach(({ name, fn }) => {
 
         expect(result).toBe('a')
       })
+
+      it('should not reopen throttle window because of stacked timers', async () => {
+        let callCount = 0
+
+        const throttled = throttle(() => {
+          callCount++
+        }, 50)
+
+        throttled()
+        expect(callCount).toBe(1)
+
+        await new Promise((r) => setTimeout(r, 10))
+        throttled()
+
+        await new Promise((r) => setTimeout(r, 10))
+        throttled()
+
+        await new Promise((r) => setTimeout(r, 35))
+
+        throttled()
+        expect(callCount).toBe(2)
+
+        await new Promise((r) => setTimeout(r, 10))
+        throttled()
+
+        expect(callCount).toBe(2)
+      })
     })
   })
 })
