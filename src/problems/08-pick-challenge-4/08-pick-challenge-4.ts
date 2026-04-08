@@ -15,34 +15,34 @@
  * // { title: string, completed: boolean }
  */
 
-import type { Equal, Expect } from '@course/types'
+import type { Equal, Expect } from "@course/types";
 
 /* _____________ Your Code Here _____________ */
 
-type MyPick<T extends {}, U extends keyof T> = {
-  [K in U]: T[K]
-}
+type MyPick<T extends NonNullable<unknown>, U extends keyof T> = {
+	[K in U]: T[K];
+};
 
 /* _____________ Test Cases _____________ */
 
 interface Todo {
-  title: string
-  description: string
-  completed: boolean
+	title: string;
+	description: string;
+	completed: boolean;
 }
 
 interface Expected1 {
-  title: string
+	title: string;
 }
 
 interface Expected2 {
-  title: string
-  completed: boolean
+	title: string;
+	completed: boolean;
 }
 
 type cases = [
-  Expect<Equal<MyPick<Todo, 'title'>, Expected1>>,
-  Expect<Equal<MyPick<Todo, 'title' | 'completed'>, Expected2>>,
-  // @ts-expect-error - invalid key
-  MyPick<Todo, 'invalid'>,
-]
+	Expect<Equal<MyPick<Todo, "title">, Expected1>>,
+	Expect<Equal<MyPick<Todo, "title" | "completed">, Expected2>>,
+	// @ts-expect-error - invalid key
+	MyPick<Todo, "invalid">,
+];

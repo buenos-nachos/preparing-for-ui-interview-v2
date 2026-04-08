@@ -1,9 +1,43 @@
 // bun test src/problems/09-deep-equals/test/deep-equals.test.ts
 
-import { detectType } from '@course/utils'
+import { detectType } from "@course/utils";
 
-export function deepEquals(a: any, b: any, cache = new Map()): boolean {
+function deepEqualsInternal(
+	a: unknown,
+	b: unknown,
+	previousPairs: Map<unknown, unknown>,
+): boolean {
+	if (a === b || (previousPairs.has(a) && previousPairs.get(a) === b)) {
+		return true;
+	}
+	const typeA = detectType(a);
+	const typeB = detectType(b);
+	if (typeA !== typeB) {
+		return false;
+	}
+	if (typeof a !== "object") {
+		return a === b;
+	}
 
+	const defA = a as Record<string | number, unknown>;
+	const defB = b as Record<string | number, unknown>;
+	const keysA = new Set(Object.keys(defA));
+	const keysB = new Set(Object.keys(defB));
+	if (keysA.symmetricDifference(keysB).size > 0) {
+		return false;
+	}
+
+	previousPairs.set(defA, defB);
+	for (const key of keysA) {
+		if (!deepEqualsInternal(defA[key], defB[key], previousPairs)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+export function deepEquals(a: unknown, b: unknown): boolean {
+	return deepEqualsInternal(a, b, new Map());
 }
 
 // --- Examples ---
