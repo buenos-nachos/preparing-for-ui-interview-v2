@@ -1,30 +1,83 @@
 // bun test src/problems/10-deep-clone/test/deep-clone.test.ts
 // TODO: Implement deepClone
 
-import { detectType } from '@course/utils'
+import { detectType } from "@course/utils";
 
-type TCollection = Map<any, any> | Set<any> | Record<any, any> | Array<any>
+type TCollection = Map<any, any> | Set<any> | Record<any, any> | any[];
 
-function getTarget(type: string): TCollection {}
+function getTarget(type: string): TCollection {
+	switch (type) {
+		case "map":
+			return new Map();
+		case "set":
+			return new Set();
+		case "array":
+			return [];
+		case "object":
+			return {};
+		default:
+			throw new Error(`Unknown type ${type}`);
+	}
+}
+
 function entries(target: TCollection): Iterable<[key: any, value: any]> {
-function set(target: TCollection, key: any, value: any) {}
+	if (target instanceof Map || target instanceof Set || Array.isArray(target)) {
+		return target.entries();
+	}
+	return Object.entries(target);
+}
 
-export const deepClone = <T>(a: T, cache = new Map()): T => {
-  const type = detectType(a)
+function set(target: TCollection, key: any, value: any) {
+	if (target instanceof Map) {
+		target.set(key, value);
+		return;
+	}
+	if (target instanceof Set) {
+		target.add(value);
+		return;
+	}
+	if (Array.isArray(target)) {
+		target[key as number] = value;
+		return;
+	}
+	target[key] = value;
+}
 
-  if (!a || typeof a !== 'object') {
-    return a
-  }
+function deepCloneInternal<T>(a: T, cache: Map<unknown, unknown>): T {
+	if (!a || typeof a !== "object") {
+		return a;
+	}
 
-  switch (type) {
-    case 'date':
-    case 'object':
-    case 'map':
-    case 'set':
-    case 'array':
-    default:
-      throw 'Unsupported type ' + a
-  }
+	const type = detectType(a);
+	switch (type) {
+		case "date": {
+			return new Date(a as unknown as Date) as T;
+		}
+
+		case "object":
+		case "map":
+		case "set":
+		case "array": {
+			if (cache.has(a)) {
+				return cache.get(a) as T;
+			}
+			const target = getTarget(type);
+			cache.set(a, target);
+			for (const [key, value] of entries(a)) {
+				const childClone = deepCloneInternal(value, cache);
+				set(target, key, childClone);
+			}
+			return target as T;
+		}
+
+		default: {
+			throw new Error(`Unsupported type: ${a}`);
+		}
+	}
+}
+
+export function deepClone<T>(a: T): T {
+	return deepCloneInternal(a, new Map());
 }
 
 // --- Examples ---
