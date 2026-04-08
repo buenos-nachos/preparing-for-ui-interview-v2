@@ -1,35 +1,44 @@
 // bun test src/problems/01-detect-type/test/detect-type.test.ts
 
 export type TType =
-  | 'null'
-  | 'undefined'
-  | 'string'
-  | 'number'
-  | 'boolean'
-  | 'symbol'
-  | 'bigint'
-  | 'object'
-  | 'array'
-  | 'function'
-  | 'date'
-  | 'regexp'
-  | 'map'
-  | 'set'
-  | 'weakmap'
-  | 'weakset'
-  | 'error'
-  | 'promise'
-  | 'arraybuffer'
-  | string
+	| "null"
+	| "undefined"
+	| "string"
+	| "number"
+	| "boolean"
+	| "symbol"
+	| "bigint"
+	| "object"
+	| "array"
+	| "function"
+	| "date"
+	| "regexp"
+	| "map"
+	| "set"
+	| "weakmap"
+	| "weakset"
+	| "error"
+	| "promise"
+	| "arraybuffer"
+	| string;
 
-export const detectType = (value: any): TType => {
-    throw new Error('Not implemented')
-}
+export const detectType = (value: unknown): TType => {
+	if (value === null) {
+		return "null";
+	}
+	if (value === undefined) {
+		return "undefined";
+	}
+
+	const proto = Object.getPrototypeOf(value);
+	const name: string = proto?.constructor?.name ?? "object";
+	return name.toLowerCase();
+};
 
 // --- Examples ---
 // Uncomment to test your implementation:
 
-// console.log(detectType(null))        // Expected: "null"
+console.log(detectType(null)); // Expected: "null"
 // console.log(detectType(undefined))   // Expected: "undefined"
 // console.log(detectType(42))          // Expected: "number"
 // console.log(detectType('hello'))     // Expected: "string"
