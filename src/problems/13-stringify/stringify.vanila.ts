@@ -1,6 +1,6 @@
 // bun test src/problems/13-stringify/test/stringify.test.ts
 
-import { detectType } from '@course/utils'
+import { detectType } from "@course/utils";
 
 /**
  * Converts a value to its string representation.
@@ -22,26 +22,77 @@ import { detectType } from '@course/utils'
  * - circular:  (ref to self)    → '[Circular]'
  * - other:     unknown type     → '"Unsupported Type"'
  */
-export const stringify = (a: any, cache = new Set()) => {
-  const type = detectType(a)
-  switch (type) {
-    case 'null':
-    case 'number':
-    case 'bigint':
-    case 'boolean':
-    case 'symbol':
-    case 'undefined':
-    case 'string':
-    case 'object':
-    case 'map':
-    case 'array':
-    case 'set':
-    case 'date':
-    case 'regexp':
-    default:
-      return '"Unsupported Type"'
-  }
+function stringifyInternal(a: unknown, cache: Set<unknown>): string {
+	if (cache.has(a)) {
+		return "[Circular]";
+	}
+
+	const type = detectType(a);
+	switch (type) {
+		case "null": {
+			return String(null);
+		}
+
+		case "string":
+		case "undefined": {
+			return `"${a}"`;
+		}
+
+		case "symbol":
+		case "number":
+		case "bigint":
+		case "regexp": {
+			return (a as number | bigint | symbol | RegExp).toString();
+		}
+
+		case "boolean": {
+			return String(a);
+		}
+
+		case "date": {
+			return (a as Date).toLocaleString();
+		}
+
+		case "array":
+		case "set": {
+			cache.add(a);
+			const buffer: string[] = [];
+			for (const el of (a as readonly unknown[] | Set<unknown>).values()) {
+				buffer.push(stringifyInternal(el, cache));
+			}
+			return `[${buffer.join(",")}]`;
+		}
+
+		case "map":
+		case "object": {
+			cache.add(a);
+			const source =
+				a instanceof Map
+					? a.entries()
+					: Object.entries(a as Record<string | number | symbol, unknown>);
+			const buffer: string[] = [];
+			for (const [key, value] of source) {
+				let keyStr: string;
+				if (typeof key === "string") {
+					keyStr = key;
+				} else {
+					keyStr = stringifyInternal(key, cache);
+				}
+				const newLine = `${keyStr}: ${stringifyInternal(value, cache)}`;
+				buffer.push(newLine);
+			}
+			return `{ ${buffer.join(",")} }`;
+		}
+
+		default: {
+			return '"Unsupported Type"';
+		}
+	}
 }
+
+export const stringify = (a: unknown) => {
+	return stringifyInternal(a, new Set());
+};
 
 // --- Examples ---
 // Uncomment to test your implementation:
