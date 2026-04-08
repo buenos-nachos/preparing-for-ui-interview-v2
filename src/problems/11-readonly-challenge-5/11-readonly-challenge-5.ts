@@ -13,17 +13,19 @@
  * todo.title = "Hello" // Error: cannot reassign a readonly property
  */
 
-import type { Equal, Expect } from '@course/types'
+import type { Equal, Expect } from "@course/types";
 
 /* _____________ Your Code Here _____________ */
 
-// Your implementation here
+type MyReadonly<T extends NonNullable<unknown>> = {
+	readonly [K in keyof T]: T[K];
+};
 
 /* _____________ Test Cases _____________ */
 
 interface Todo {
-  title: string
-  description: string
+	title: string;
+	description: string;
 }
 
-type cases = [Expect<Equal<MyReadonly<Todo>, Readonly<Todo>>>]
+type cases = [Expect<Equal<MyReadonly<Todo>, Readonly<Todo>>>];
