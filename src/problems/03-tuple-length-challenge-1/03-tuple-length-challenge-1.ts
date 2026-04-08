@@ -12,22 +12,28 @@
  * type spaceXLength = Length<spaceX> // 5
  */
 
-import type { Equal, Expect } from '@course/types'
+import type { Equal, Expect } from "@course/types";
 
 /* _____________ Your Code Here _____________ */
 
-type Length = {};
+type Length<T extends readonly unknown[]> = T["length"];
 
 /* _____________ Test Cases _____________ */
 
-const tesla = ['tesla', 'model 3', 'model X', 'model Y'] as const
-const spaceX = ['FALCON 9', 'FALCON HEAVY', 'DRAGON', 'STARSHIP', 'HUMAN SPACEFLIGHT'] as const
+const tesla = ["tesla", "model 3", "model X", "model Y"] as const;
+const spaceX = [
+	"FALCON 9",
+	"FALCON HEAVY",
+	"DRAGON",
+	"STARSHIP",
+	"HUMAN SPACEFLIGHT",
+] as const;
 
-type cases = [
-  Expect<Equal<Length<typeof tesla>, 4>>,
-  Expect<Equal<Length<typeof spaceX>, 5>>,
-  // @ts-expect-error - should only accept arrays/tuples
-  Length<5>,
-  // @ts-expect-error strings are not valid tuples
-  Length<'hello world'>,
-]
+type Cases = [
+	Expect<Equal<Length<typeof tesla>, 4>>,
+	Expect<Equal<Length<typeof spaceX>, 5>>,
+	// @ts-expect-error - should only accept arrays/tuples
+	Length<5>,
+	// @ts-expect-error strings are not valid tuples
+	Length<"hello world">,
+];

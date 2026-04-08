@@ -14,24 +14,29 @@
  * type head3 = First<arr3> // never
  */
 
-import type { Equal, Expect } from '@course/types'
+import type { Equal, Expect } from "@course/types";
 
 /* _____________ Your Code Here _____________ */
 
-type First = {};
+type First<T extends readonly unknown[]> = T extends [
+	infer First,
+	...(readonly unknown[]),
+]
+	? First
+	: never;
 
 /* _____________ Test Cases _____________ */
 
 type cases = [
-  Expect<Equal<First<[3, 2, 1]>, 3>>,
-  Expect<Equal<First<[() => 123, { a: string }]>, () => 123>>,
-  Expect<Equal<First<[]>, never>>,
-  Expect<Equal<First<[undefined]>, undefined>>,
-]
+	Expect<Equal<First<[3, 2, 1]>, 3>>,
+	Expect<Equal<First<[() => 123, { a: string }]>, () => 123>>,
+	Expect<Equal<First<[]>, never>>,
+	Expect<Equal<First<[undefined]>, undefined>>,
+];
 
 type errors = [
-  // @ts-expect-error strings are not arrays
-  First<'notArray'>,
-  // @ts-expect-error objects are not arrays
-  First<{ 0: 'arrayLike' }>,
-]
+	// @ts-expect-error strings are not arrays
+	First<"notArray">,
+	// @ts-expect-error objects are not arrays
+	First<{ 0: "arrayLike" }>,
+];
