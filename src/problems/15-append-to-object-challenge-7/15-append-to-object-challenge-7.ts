@@ -16,7 +16,7 @@ import type { Equal, Expect } from "@course/types";
 
 type AppendToObject<
 	TSource extends NonNullable<unknown>,
-	TKey extends string,
+	TKey extends string | number | symbol,
 	TValue,
 > = {
 	[K in keyof TSource | TKey]: K extends keyof TSource ? TSource[K] : TValue;

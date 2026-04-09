@@ -1,46 +1,100 @@
 // bun test src/problems/17-tree-select/test/tree-select.test.ts
 
-type TSelectStatus = 'v' | ' ' | 'o'
+type TSelectStatus = "v" | " " | "o";
 
-const SELECTED: TSelectStatus = 'v'
-const NOT_SELECTED: TSelectStatus = ' '
-const PARTIAL: TSelectStatus = 'o'
+const SELECTED: TSelectStatus = "v";
+const NOT_SELECTED: TSelectStatus = " ";
+const PARTIAL: TSelectStatus = "o";
 
 // Step 0: Implement TreeNode methods
 class TreeNode {
-  children: TreeNode[] = []
-  status: TSelectStatus = NOT_SELECTED
+	readonly name: string;
+	parent: TreeNode | null;
+	children: TreeNode[];
+	status: TSelectStatus;
 
-  constructor(
-    public name: string,
-    public parent: TreeNode | null = null,
-  ) {}
+	constructor(name: string, parent?: TreeNode | null) {
+		this.name = name;
+		this.children = [];
+		this.parent = parent ?? null;
+		this.status = NOT_SELECTED;
+	}
 
-  toString(level: number = -1): string {
-    const dots = Math.max(0, level)
-    const root = level === -1 ? '' : `${'.'.repeat(dots)}[${this.status}]${this.name}\n`
-    return root.concat(this.children.map((n) => n.toString(level + 1)).join(''))
-  }
+	addChild(child: TreeNode): void {
+		this.children.push(child);
+	}
+
+	toString(level: number = -1): string {
+		const dots = Math.max(0, level);
+		const root =
+			level === -1 ? "" : `${".".repeat(dots)}[${this.status}]${this.name}\n`;
+		return root.concat(
+			this.children.map((n) => n.toString(level + 1)).join(""),
+		);
+	}
 }
 
 // Step 1: Implement createTree
-function createTree(paths: string[]): [TreeNode, Map<string, TreeNode>] {}
+function createTree(
+	paths: string[],
+): [root: TreeNode, nodeStore: Map<string, TreeNode>] {
+	const root = new TreeNode("/");
+	const nodeStore = new Map([["/", root]]);
+
+	for (const p of paths) {
+		let parent = root;
+		const split = p.split("/");
+		for (const segment of split) {
+			let next = nodeStore.get(segment);
+			if (next === undefined) {
+				next = new TreeNode(segment, parent);
+				nodeStore.set(segment, next);
+				parent.children.push(next);
+			}
+			parent = next;
+		}
+	}
+
+	return [root, nodeStore] as const;
+}
 //   - Create a root TreeNode and a Map<string, TreeNode> store
 //   - For each path, split by '/' into tokens
 //   - For each token, check if it exists in the store; if not, create a new TreeNode and addChild to parent
 //   - Return [root, store]
 
 // Step 2: Implement bubble
-function* bubble(node: TreeNode): Iterable<TreeNode> {}
+function* bubble(node: TreeNode): Generator<TreeNode> {
+	let current: TreeNode | null = node;
+	while (current !== null) {
+		const newNode = current;
+		current = current.parent;
+		yield newNode;
+	}
+}
 
 // Step 3: Implement propagate
-function* propagate(node: TreeNode): Iterable<TreeNode> {}
+function* propagate(node: TreeNode): Generator<TreeNode> {
+	const nodeQueue: TreeNode[] = [node];
+	while (nodeQueue.length > 0) {
+		const next = nodeQueue.shift();
+		if (next === undefined) {
+			throw new Error("Unable to pop latest element from stack");
+		}
+		yield next;
+		for (const c of next.children) {
+			nodeQueue.push(c);
+		}
+	}
+}
+
 // Step 4: Implement renderTreeSelect
 //   - Call createTree to build the tree
 //   - For each click: toggle the clicked node's status, propagate to descendants, bubble up to update ancestors
 //   - Return root.toString()
 
-export const renderTreeSelect = (paths: string[], clicks: string[]): string => {}
+export const renderTreeSelect = (paths: string[], clicks: string[]): string => {
+	const [root, nodeStore] = createTree(paths);
+};
 
 // --- Examples ---
 // Uncomment to test your implementation:

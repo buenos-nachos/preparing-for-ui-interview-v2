@@ -16,12 +16,14 @@ import type { Equal, Expect } from "@course/types";
 /* _____________ Your Code Here _____________ */
 
 type Merge<T extends NonNullable<unknown>, U extends NonNullable<unknown>> = {
-	[K in keyof T | keyof U]: K extends keyof T
-		? T[K]
-		: K extends keyof U
-			? U[K]
+	[K in keyof T | keyof U]: K extends keyof U
+		? U[K]
+		: K extends keyof T
+			? T[K]
 			: never;
 };
+
+type X = Merge<Foo, Bar>;
 
 /* _____________ Test Cases _____________ */
 
