@@ -102,16 +102,10 @@ export const renderTreeSelect = (paths: string[], clicks: string[]): string => {
 			continue;
 		}
 
-		if (node.status === SELECTED) {
-			node.status = NOT_SELECTED;
-			for (const descendant of propagate(node)) {
-				descendant.status = NOT_SELECTED;
-			}
-		} else {
-			node.status = SELECTED;
-			for (const descendant of propagate(node)) {
-				descendant.status = SELECTED;
-			}
+		const newMark = node.status === SELECTED ? NOT_SELECTED : SELECTED;
+		node.status = newMark;
+		for (const descendant of propagate(node)) {
+			descendant.status = newMark;
 		}
 
 		for (const parent of bubble(node)) {
