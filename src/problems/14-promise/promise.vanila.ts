@@ -12,6 +12,8 @@ type PromiseCore<T = unknown, Err = unknown> =
 	| { status: "fulfilled"; value: T; err: undefined }
 	| { status: "rejected"; value: undefined; err: Err };
 
+type X = PromiseLike<string>;
+
 // Step 1: Define types and constants
 //  - Executor
 //  - OnFulfilled<T,R>
@@ -116,13 +118,13 @@ export class MyPromise<T = unknown, Err = unknown> {
 		});
 	}
 
-	static resolve<T = unknown, Err = unknown>(value: T): MyPromise<T, Err> {
+	static resolve<T = unknown>(value: T): MyPromise<T, never> {
 		return new MyPromise((resolve) => {
 			resolve(value);
 		});
 	}
 
-	static reject<T = unknown, Err = unknown>(err: Err): MyPromise<T, Err> {
+	static reject<Err = unknown>(err: Err): MyPromise<never, Err> {
 		return new MyPromise((_, reject) => {
 			reject(err);
 		});
