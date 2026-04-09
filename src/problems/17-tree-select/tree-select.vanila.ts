@@ -64,11 +64,10 @@ function createTree(
 
 // Step 2: Implement bubble
 function* bubble(node: TreeNode): Generator<TreeNode> {
-	let current: TreeNode | null = node;
+	let current: TreeNode | null = node.parent;
 	while (current !== null) {
-		const newNode = current;
+		yield current;
 		current = current.parent;
-		yield newNode;
 	}
 }
 
@@ -80,7 +79,9 @@ function* propagate(node: TreeNode): Generator<TreeNode> {
 		if (next === undefined) {
 			throw new Error("Unable to pop latest element from stack");
 		}
-		yield next;
+		if (next !== node) {
+			yield next;
+		}
 		for (const c of next.children) {
 			nodeQueue.push(c);
 		}
@@ -94,13 +95,53 @@ function* propagate(node: TreeNode): Generator<TreeNode> {
 
 export const renderTreeSelect = (paths: string[], clicks: string[]): string => {
 	const [root, nodeStore] = createTree(paths);
+
+	for (const c of clicks) {
+		const node = nodeStore.get(c);
+		if (node === undefined) {
+			continue;
+		}
+
+		if (node.status === SELECTED) {
+			node.status = NOT_SELECTED;
+			for (const descendant of propagate(node)) {
+				descendant.status = NOT_SELECTED;
+			}
+		} else {
+			node.status = SELECTED;
+			for (const descendant of propagate(node)) {
+				descendant.status = SELECTED;
+			}
+		}
+
+		for (const parent of bubble(node)) {
+			let selectedCount = 0;
+			let partialCount = 0;
+			for (const child of parent.children) {
+				if (child.status === SELECTED) {
+					selectedCount++;
+				}
+				if (child.status === PARTIAL) {
+					partialCount++;
+				}
+			}
+
+			if (selectedCount === parent.children.length) {
+				parent.status = SELECTED;
+			} else if (selectedCount > 0 || partialCount > 0) {
+				parent.status = PARTIAL;
+			}
+		}
+	}
+
+	return root.toString();
 };
 
 // --- Examples ---
 // Uncomment to test your implementation:
 // Example 1: Basic tree rendering (no clicks)
-// const paths1 = ['fruits/apple', 'fruits/banana', 'vegetables/carrot']
-// console.log(renderTreeSelect(paths1, []))
+const paths1 = ["fruits/apple", "fruits/banana", "vegetables/carrot"];
+console.log(renderTreeSelect(paths1, []));
 // Expected output:
 // [ ]fruits
 // .[ ]apple
@@ -109,21 +150,23 @@ export const renderTreeSelect = (paths: string[], clicks: string[]): string => {
 // .[ ]carrot
 
 // Example 2: Select a leaf node → parent becomes partial
-// console.log(renderTreeSelect(['fruits/apple', 'fruits/banana'], ['apple']))
+console.log(renderTreeSelect(["fruits/apple", "fruits/banana"], ["apple"]));
 // Expected output:
 // [o]fruits
 // .[v]apple
 // .[ ]banana
 
 // Example 3: Select all children → parent becomes selected
-// console.log(renderTreeSelect(['fruits/apple', 'fruits/banana'], ['apple', 'banana']))
+console.log(
+	renderTreeSelect(["fruits/apple", "fruits/banana"], ["apple", "banana"]),
+);
 // Expected output:
 // [v]fruits
 // .[v]apple
 // .[v]banana
 
 // Example 4: Select parent → all children become selected, then deselect one child
-// console.log(renderTreeSelect(['a/b', 'a/c'], ['a', 'b']))
+console.log(renderTreeSelect(["a/b", "a/c"], ["a", "b"]));
 // Expected output:
 // [o]a
 // .[ ]b
