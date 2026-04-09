@@ -12,8 +12,6 @@ type PromiseCore<T = unknown, Err = unknown> =
 	| { status: "fulfilled"; value: T; err: undefined }
 	| { status: "rejected"; value: undefined; err: Err };
 
-type X = PromiseLike<string>;
-
 // Step 1: Define types and constants
 //  - Executor
 //  - OnFulfilled<T,R>
