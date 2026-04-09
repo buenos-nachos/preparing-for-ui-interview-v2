@@ -116,13 +116,13 @@ export class MyPromise<T = unknown, Err = unknown> {
 		});
 	}
 
-	static resolve<T = unknown>(value: T): MyPromise<T, never> {
+	static resolve<T = unknown, Err = never>(value: T): MyPromise<T, Err> {
 		return new MyPromise((resolve) => {
 			resolve(value);
 		});
 	}
 
-	static reject<Err = unknown>(err: Err): MyPromise<never, Err> {
+	static reject<T = never, Err = unknown>(err: Err): MyPromise<T, Err> {
 		return new MyPromise((_, reject) => {
 			reject(err);
 		});
