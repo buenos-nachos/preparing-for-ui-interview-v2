@@ -1,7 +1,7 @@
-import { AbstractComponent, type TComponentConfig } from '@course/utils'
-import styles from './accordion.module.css'
-import flex from '@course/styles'
-import cx from '@course/cx'
+import cx from "@course/cx";
+import flex from "@course/styles";
+import { AbstractComponent } from "@course/utils";
+import css from "./accordion.module.css";
 
 /**
  * Expected input:
@@ -19,17 +19,38 @@ import cx from '@course/cx'
  * 3. Provide toHTML template — map over items, render <details>/<summary>/<p> for each
  * 4. Add CSS — use styles and cx() for className composition
  */
-type TAccordionItem = {
-  id: string
-  title: string
-  content: string
-}
-type TAccordionProps = {
-  items: TAccordionItem[]
-}
+type AccordionItem = {
+	id: string;
+	title: string;
+	content: string;
+};
 
-export class Accordion extends AbstractComponent<TAccordionProps> {
-  toHTML(): string {
-    return ``
-  }
+type AccordionProps = {
+	items: AccordionItem[];
+};
+
+export class Accordion extends AbstractComponent<AccordionProps> {
+	toHTML(): string {
+		const content = this.config.items
+			.map((it) => this.createAccordionPanel(it))
+			.join("");
+		return `
+		  <div class="${cx(css.container, flex.maxW600px, flex.flexColumnGap12, flex.w100)}">
+				${content}
+			</div>
+		`;
+	}
+
+	createAccordionPanel(item: AccordionItem): string {
+		return `
+			<details class="${css.details}">
+			  <summary class="${cx(css.summary, flex.flexRowBetween, flex.paddingHor16, flex.paddingVer12, flex.fontXL)}">
+					${item.title}
+				</summary>
+				<p class="${cx(css.content, flex.paddingHor16, flex.paddingVer16)}">
+				  ${item.content}
+				</p>
+			</details>
+		`;
+	}
 }

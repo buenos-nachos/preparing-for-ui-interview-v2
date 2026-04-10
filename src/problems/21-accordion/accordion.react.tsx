@@ -1,6 +1,7 @@
-import css from './accordion.module.css'
-import flex from '@course/styles'
-import cx from '@course/cx'
+import cx from "@course/cx";
+import flex from "@course/styles";
+import type { FC } from "react";
+import css from "./accordion.module.css";
 
 /**
  * Expected input:
@@ -18,8 +19,48 @@ import cx from '@course/cx'
  * 4. Add CSS — use styles and cx() for className composition
  */
 
-type TProps = {}
+type AccordionItem = Readonly<{
+	id: string;
+	title: string;
+	content: string;
+}>;
 
-export const Accordion = (props: TProps) => {
-  return <div>{/* TODO: implement */}</div>
-}
+type AccordionProps = Readonly<{
+	items: readonly AccordionItem[];
+}>;
+
+export const Accordion: FC<AccordionProps> = ({ items }) => {
+	return (
+		<ul
+			className={cx(
+				css.container,
+				flex.maxW600px,
+				flex.flexColumnGap12,
+				flex.w100,
+			)}
+		>
+			{items.map((it) => (
+				<li key={it.id}>
+					<details className={css.details}>
+						<summary
+							className={cx(
+								css.summary,
+								flex.flexRowBetween,
+								flex.paddingHor16,
+								flex.paddingVer12,
+								flex.fontXL,
+							)}
+						>
+							{it.title}
+						</summary>
+						<p
+							className={cx(css.content, flex.paddingHor16, flex.paddingVer16)}
+						>
+							{it.content}
+						</p>
+					</details>
+				</li>
+			))}
+		</ul>
+	);
+};
