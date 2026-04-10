@@ -18,8 +18,6 @@ type Diff<O extends object, O1 extends object> = {
 	[K in keyof (O & O1) as K extends keyof (O | O1) ? never : K]: (O & O1)[K];
 };
 
-type X = keyof (Foo | Bar);
-
 /* _____________ Test Cases _____________ */
 
 type Foo = { name: string; age: string };
