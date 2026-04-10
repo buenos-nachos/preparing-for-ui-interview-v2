@@ -102,6 +102,12 @@ export const StarRating: FC<StarRatingProps> = ({
 		);
 	}
 
+	const onPointerLeave = () => {
+		if (!readonly) {
+			setHoveredIndex(-1);
+		}
+	};
+
 	return (
 		<div
 			style={{
@@ -120,7 +126,6 @@ export const StarRating: FC<StarRatingProps> = ({
 					hoveredIndex !== -1
 						? hoveredIndex < starIndex
 						: ratingValue > activeRating;
-
 				return (
 					<button
 						key={starIndex}
@@ -136,20 +141,16 @@ export const StarRating: FC<StarRatingProps> = ({
 							cursor: readonly ? "default" : "pointer",
 							opacity: showAsFaded ? "45%" : "100%",
 						}}
-						onClick={() => {
-							if (!readonly) {
-								setInternalRating(ratingValue);
-								onRatingChange?.(ratingValue);
-							}
-						}}
+						onPointerLeave={onPointerLeave}
 						onPointerEnter={() => {
 							if (!readonly) {
 								setHoveredIndex(starIndex);
 							}
 						}}
-						onPointerLeave={() => {
+						onClick={() => {
 							if (!readonly) {
-								setHoveredIndex(-1);
+								setInternalRating(ratingValue);
+								onRatingChange?.(ratingValue);
 							}
 						}}
 					>
