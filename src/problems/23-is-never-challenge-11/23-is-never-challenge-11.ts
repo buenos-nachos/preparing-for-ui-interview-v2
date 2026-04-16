@@ -10,20 +10,22 @@
  * type C = IsNever<undefined> // false
  */
 
-import type { Equal, Expect } from '@course/types'
+import type { Equal, Expect } from "@course/types";
 
 /* _____________ Your Code Here _____________ */
 
-type IsNever<T> = {}
+type IsNever<T> = T extends never ? true : false;
+
+type X = IsNever<never>;
 
 /* _____________ Test Cases _____________ */
 
 type cases = [
-  Expect<Equal<IsNever<never>, true>>,
-  Expect<Equal<IsNever<never | string>, false>>,
-  Expect<Equal<IsNever<''>, false>>,
-  Expect<Equal<IsNever<undefined>, false>>,
-  Expect<Equal<IsNever<null>, false>>,
-  Expect<Equal<IsNever<[]>, false>>,
-  Expect<Equal<IsNever<{}>, false>>,
-]
+	Expect<Equal<IsNever<never>, true>>,
+	Expect<Equal<IsNever<never | string>, false>>,
+	Expect<Equal<IsNever<"">, false>>,
+	Expect<Equal<IsNever<undefined>, false>>,
+	Expect<Equal<IsNever<null>, false>>,
+	Expect<Equal<IsNever<[]>, false>>,
+	Expect<Equal<IsNever<{}>, false>>,
+];
