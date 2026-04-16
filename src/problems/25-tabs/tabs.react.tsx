@@ -1,82 +1,131 @@
-import React, { useState, type PropsWithChildren, type ReactElement, type RefObject } from 'react'
-import flex from '@course/styles'
-import tabs from './tabs.module.css'
-import cx from '@course/cx'
-import { createPortal } from 'react-dom'
+import cx from "@course/cx";
+import flex from "@course/styles";
+import {
+	createContext,
+	type HTMLAttributes,
+	type ReactElement,
+	type RefObject,
+	useContext,
+	useId,
+	useState,
+} from "react";
+import { createPortal } from "react-dom";
+import tabs from "./tabs.module.css";
 
-type TTabProps = PropsWithChildren<{
-  name: string
-  isActive?: boolean
-}>
+type TabState = Readonly<{
+	parentId: string;
+	activeTabName: string;
+	namesToIds: Map<string, string>;
+	onActiveTabChange: (newTab: string) => void;
+}>;
 
-type TTabsProps = {
-  target?: RefObject<HTMLElement>
-  defaultTab?: string
-  children: ReactElement<TTabProps, typeof Tab>[]
+const tabStateContext = createContext<TabState | null>(null);
+
+function useTabStateContext(): TabState {
+	const value = useContext(tabStateContext);
+	if (value === null) {
+		throw new Error("Child tab is being mounted outside of parent tab list");
+	}
+	return value;
 }
 
-/**
- * Step 1: Implement Tab component
- * - Render a <li role="presentation"> with a <button> inside
- * - Button attributes: role="tab", id="tab-{name}", data-tab-name={name},
- *   aria-controls="tab-panel", aria-selected={isActive}
- */
-export function Tab({ name, isActive }: TTabProps) {
-  // TODO: implement
-  return null
+type TabProps = Omit<HTMLAttributes<HTMLButtonElement>, "id"> & {
+	name: string;
+};
+
+export function Tab({ name, onClick, ...props }: TabProps) {
+	const { parentId, activeTabName, namesToIds, onActiveTabChange } =
+		useTabStateContext();
+
+	const id = namesToIds.get(name);
+	if (id === undefined) {
+		throw new Error(`Unable to retrieve ID for name ${name}`);
+	}
+
+	return (
+		<li>
+			<button
+				{...props}
+				role="tab"
+				id={id}
+				data-tab-name={name}
+				aria-selected={name === activeTabName}
+				aria-controls={parentId}
+				onClick={(e) => {
+					if (name !== activeTabName) {
+						onActiveTabChange(activeTabName);
+					}
+					onClick?.(e);
+				}}
+			>
+				{name}
+			</button>
+		</li>
+	);
 }
 
-/**
- * Expected input:
- * <Tabs defaultTab="Tab 1">
- *   <Tab name="Tab 1">Content for tab 1</Tab>
- *   <Tab name="Tab 2">Content for tab 2</Tab>
- * </Tabs>
- *
- * Optional: <Tabs target={ref}> to render content into an external container via portal
- *
- * Step 2: Implement Tabs component
- * - Track activeTab with useState (default: defaultTab or first child's name)
- * - Render <nav> with <ul role="tablist"> containing children (Tab components)
- * - Use React.cloneElement to pass isActive={child.props.name === activeTab} to each Tab
- * - Handle click on <ul> to detect button clicks and update activeTab
- * - Find content of active tab from children props
- * - Render content in <section role="tabpanel" id="tab-panel" aria-labelledby="tab-{activeTab}">
- * - If target ref exists, use createPortal with a <div role="tabpanel"> wrapper instead
- */
-export function Tabs({ defaultTab, children, target }: TTabsProps) {
-  // TODO: implement
-  return <div>TODO: Implement Tabs</div>
-}
+type TabsProps = {
+	target?: RefObject<HTMLElement>;
+	defaultTab?: string;
+	children: ReactElement<TabProps, typeof Tab>[];
+};
 
-/**
- * Step 3: Accessibility (a11y)
- * The following ARIA attributes are used in this component:
- *
- * Container:
- * - role="tablist" (on <ul>) — identifies the element as a container for tab controls,
- *   telling assistive technologies this is a set of tabs, not a regular list
- *
- * Tab items:
- * - role="presentation" (on <li>) — removes the list item semantics so screen readers
- *   don't announce "list item 1 of 3"; the meaningful role is on the <button> inside
- *
- * Tab buttons:
- * - role="tab" (on <button>) — identifies each button as a tab control, so screen readers
- *   announce it as "tab" rather than just "button"
- * - id="tab-{name}" — unique identifier used by aria-labelledby on the panel to create
- *   a programmatic link between the tab and its content
- * - aria-controls="tab-panel" — points to the id of the content panel this tab controls,
- *   allowing assistive technologies to navigate directly from tab to panel
- * - aria-selected={isActive} — indicates which tab is currently active; screen readers
- *   announce "selected" for the active tab so users know which tab they're on
- * - data-tab-name={name} — not an ARIA attribute, but used for click handling to identify
- *   which tab was clicked
- *
- * Content panel:
- * - role="tabpanel" (on <section> or portal <div>) — identifies the content area as a tab panel,
- *   so screen readers announce it as "tab panel" when the user navigates to it
- * - id="tab-panel" — unique identifier referenced by aria-controls on each tab button
- * - aria-labelledby="tab-{activeTab}" — links the panel to the currently active tab button,
- *   so screen readers announce the panel's label as the active tab's name (e.g., "Tab 1 tab panel")
- */
+export function Tabs({ defaultTab, children, target }: TabsProps) {
+	if (children.length === 0) {
+		throw new Error("Children for Tabs cannot be empty");
+	}
+
+	const hookId = useId();
+	const [activeTab, setActiveTab] = useState(
+		defaultTab || children[0].props.name || "",
+	);
+
+	const tabState: TabState = {
+		activeTabName: activeTab,
+		parentId: `${hookId}-tab-panel`,
+		onActiveTabChange: setActiveTab,
+		namesToIds: new Map(
+			children.map((c) => {
+				const name = c.props.name;
+				return [name, `${hookId}-tab-${name}`];
+			}),
+		),
+	};
+
+	const content = children.find((child) => child.props.name === activeTab)
+		?.props.children;
+
+	return (
+		<div>
+			<nav>
+				<tabStateContext.Provider value={tabState}>
+					<ul role="tablist" className={cx(flex.flexRowStart, flex.flexGap16)}>
+						{children}
+					</ul>
+				</tabStateContext.Provider>
+			</nav>
+
+			{target?.current ? (
+				createPortal(
+					<div
+						role="tabpanel"
+						id={tabState.parentId}
+						aria-labelledby={tabState.namesToIds.get(activeTab)}
+					>
+						{content}
+					</div>,
+					target.current,
+				)
+			) : (
+				<section
+					role="tabpanel"
+					id={tabState.parentId}
+					aria-labelledby={tabState.namesToIds.get(activeTab)}
+					className={tabs.container}
+				>
+					{content}
+				</section>
+			)}
+		</div>
+	);
+}
